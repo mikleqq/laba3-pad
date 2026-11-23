@@ -240,66 +240,78 @@ class PostgresEventBus(EventBus):
         logger.info("subscribed", extra=log_extra(consumer=queue_name, routing_keys=routing_keys))
 
     async def _consume(self, consumer: str, keys: list[str], handler: Handler, service_name: str) -> None:
+        """Competing consumers: when a service runs several replicas (Kubernetes), only the replica that
+        holds the row lock on its offset processes events; the others skip the locked row and wait.
+        The offset moves in the same transaction, so a replica that dies mid-batch leaves the offset
+        where it was and another replica re-processes those events (handlers are idempotent)."""
         from sqlalchemy import text
 
         attempts = 0
         while True:
+            pause = self.poll_interval
             try:
                 async with self._engine.connect() as conn:
-                    offset = (
-                        await conn.execute(
-                            text("SELECT last_event_id FROM bus.consumer_offsets WHERE consumer = :c"), {"c": consumer}
-                        )
-                    ).scalar_one()
-                    rows = (
-                        await conn.execute(
-                            text("SELECT id, event_type, payload FROM bus.events WHERE id > :o ORDER BY id LIMIT :n"),
-                            {"o": offset, "n": self.batch_size},
-                        )
-                    ).all()
-                if not rows:
-                    await asyncio.sleep(self.poll_interval)
-                    continue
-
-                for row in rows:
-                    if any(topic_matches(k, row.event_type) for k in keys):
-                        payload = row.payload if isinstance(row.payload, dict) else json.loads(row.payload)
-                        if not await run_handler(handler, payload, service_name):
-                            attempts += 1
-                            if attempts < self.max_attempts:
-                                logger.warning(
-                                    "event will be retried",
-                                    extra=log_extra(consumer=consumer, event=row.id, attempts=attempts),
+                    async with conn.begin():
+                        offset = (
+                            await conn.execute(
+                                text(
+                                    "SELECT last_event_id FROM bus.consumer_offsets "
+                                    "WHERE consumer = :c FOR UPDATE SKIP LOCKED"
+                                ),
+                                {"c": consumer},
+                            )
+                        ).scalar_one_or_none()
+                        if offset is not None:  # None: another replica is consuming right now
+                            rows = (
+                                await conn.execute(
+                                    text(
+                                        "SELECT id, event_type, payload FROM bus.events "
+                                        "WHERE id > :o ORDER BY id LIMIT :n"
+                                    ),
+                                    {"o": offset, "n": self.batch_size},
                                 )
-                                await asyncio.sleep(self.retry_delay)
-                                break  # re-read from the same offset
-                            await self._dead_letter(consumer, row.id, "handler failed")
-                    attempts = 0
-                    await self._advance(consumer, row.id)
+                            ).all()
+                            last = offset
+                            for row in rows:
+                                if any(topic_matches(k, row.event_type) for k in keys):
+                                    payload = row.payload if isinstance(row.payload, dict) else json.loads(row.payload)
+                                    if not await run_handler(handler, payload, service_name):
+                                        attempts += 1
+                                        if attempts < self.max_attempts:
+                                            logger.warning(
+                                                "event will be retried",
+                                                extra=log_extra(consumer=consumer, event=row.id, attempts=attempts),
+                                            )
+                                            pause = self.retry_delay
+                                            break  # keep the offset before this event
+                                        logger.error(
+                                            "event moved to dead letters", extra=log_extra(consumer=consumer, event=row.id)
+                                        )
+                                        await conn.execute(
+                                            text(
+                                                "INSERT INTO bus.dead_letters (consumer, event_id, error) "
+                                                "VALUES (:c, :e, 'handler failed')"
+                                            ),
+                                            {"c": consumer, "e": row.id},
+                                        )
+                                attempts = 0
+                                last = row.id
+                            if last != offset:
+                                await conn.execute(
+                                    text(
+                                        "UPDATE bus.consumer_offsets SET last_event_id = :id, updated_at = now() "
+                                        "WHERE consumer = :c"
+                                    ),
+                                    {"id": last, "c": consumer},
+                                )
+                            if len(rows) == self.batch_size and pause == self.poll_interval:
+                                pause = 0  # more events waiting
             except asyncio.CancelledError:
                 raise
             except Exception as exc:  # noqa: BLE001 - database temporarily unavailable
                 logger.warning("event bus unavailable, retrying", extra=log_extra(consumer=consumer, error=str(exc)))
-                await asyncio.sleep(self.retry_delay)
-
-    async def _advance(self, consumer: str, event_id: int) -> None:
-        from sqlalchemy import text
-
-        async with self._engine.begin() as conn:
-            await conn.execute(
-                text("UPDATE bus.consumer_offsets SET last_event_id = :id, updated_at = now() WHERE consumer = :c"),
-                {"id": event_id, "c": consumer},
-            )
-
-    async def _dead_letter(self, consumer: str, event_id: int, error: str) -> None:
-        from sqlalchemy import text
-
-        logger.error("event moved to dead letters", extra=log_extra(consumer=consumer, event=event_id))
-        async with self._engine.begin() as conn:
-            await conn.execute(
-                text("INSERT INTO bus.dead_letters (consumer, event_id, error) VALUES (:c, :e, :err)"),
-                {"c": consumer, "e": event_id, "err": error},
-            )
+                pause = self.retry_delay
+            await asyncio.sleep(pause)
 
     async def is_healthy(self) -> bool:
         from sqlalchemy import text
