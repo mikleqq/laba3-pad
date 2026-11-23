@@ -1,0 +1,5 @@
+# Local development & tests: pip install -r requirements-dev.txt
+-e libs/common
+aiosqlite>=0.20
+pytest>=8
+pytest-asyncio>=0.24

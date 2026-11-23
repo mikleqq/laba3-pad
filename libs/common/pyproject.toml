@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shopcommon"
+version = "1.0.0"
+description = "Shared infrastructure code (logging, errors, security, messaging, DB) for ShopHub microservices"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.3,<3",
+    "email-validator>=2.1,<3",
+    "sqlalchemy[asyncio]>=2.0.30,<2.1",
+    "asyncpg>=0.29",
+    "httpx>=0.27,<1",
+    "PyJWT>=2.8,<3",
+]
+
+[tool.setuptools.packages.find]
+include = ["shopcommon*"]

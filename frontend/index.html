@@ -1,0 +1,1212 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShopHub — магазин техники</title>
+<style>
+  :root {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --ink: #0f172a;
+    --ink-2: #334155;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --accent: #2563eb;
+    --accent-2: #7c3aed;
+    --accent-soft: #eef2ff;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --bad: #dc2626;
+    --bad-soft: #fee2e2;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --radius: 16px;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+    --shadow: 0 1px 3px rgba(15, 23, 42, .06), 0 10px 30px rgba(15, 23, 42, .06);
+    --shadow-lg: 0 20px 60px rgba(15, 23, 42, .25);
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- top ---------- */
+  .promo { background: var(--ink); color: #cbd5e1; font-size: 13px; }
+  .promo .wrap { display: flex; gap: 28px; justify-content: center; padding-top: 7px; padding-bottom: 7px; flex-wrap: wrap; }
+  header.main { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
+  header.main .wrap { display: flex; align-items: center; gap: 20px; height: 72px; }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); flex: none; }
+  .logo .mark { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 21px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 6px 16px rgba(37, 99, 235, .35); }
+  .logo b { font-size: 21px; letter-spacing: -.02em; display: block; line-height: 1.1; }
+  .logo small { color: var(--muted); font-size: 12px; }
+  .search { flex: 1; position: relative; max-width: 560px; }
+  .search input { width: 100%; height: 46px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); padding: 0 16px 0 44px; outline: none; transition: .15s; }
+  .search input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 4px var(--accent-soft); }
+  .search .ico { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .act { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; border: 0; background: none; padding: 6px 10px; border-radius: 12px; color: var(--ink-2); font-size: 12px; min-width: 66px; }
+  .act:hover { background: var(--bg); }
+  .act .i { font-size: 21px; line-height: 1; }
+  .badge { position: absolute; top: 0; right: 8px; min-width: 18px; height: 18px; border-radius: 9px; padding: 0 5px; background: var(--bad); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+  .badge.blue { background: var(--accent); }
+  .cart-btn { display: flex; align-items: center; gap: 10px; border: 0; border-radius: 12px; height: 46px; padding: 0 16px; background: var(--accent); color: #fff; font-weight: 700; position: relative; }
+  .cart-btn:hover { filter: brightness(1.08); }
+  .cart-btn .badge { right: -6px; top: -6px; background: var(--ink); }
+
+  nav.cats { background: var(--surface); border-bottom: 1px solid var(--line); }
+  nav.cats .wrap { display: flex; gap: 6px; overflow-x: auto; padding-top: 10px; padding-bottom: 10px; scrollbar-width: none; }
+  .cat { flex: none; display: flex; align-items: center; gap: 7px; border: 1px solid transparent; background: none; border-radius: 999px; padding: 7px 14px; font-weight: 600; color: var(--ink-2); font-size: 14px; }
+  .cat:hover { background: var(--bg); }
+  .cat.active { background: var(--ink); color: #fff; }
+
+  /* ---------- hero ---------- */
+  .hero { margin-top: 24px; border-radius: 24px; overflow: hidden; color: #fff; display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; padding: 40px 44px;
+    background: radial-gradient(circle at 85% 20%, rgba(124, 58, 237, .55), transparent 45%), linear-gradient(120deg, #0b1220 0%, #1e3a8a 60%, #4338ca 100%); }
+  .hero .kicker { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: rgba(255, 255, 255, .14); padding: 5px 10px; border-radius: 999px; }
+  .hero h1 { font-size: 40px; line-height: 1.1; margin: 14px 0 10px; letter-spacing: -.02em; }
+  .hero p { color: #c7d2fe; margin: 0 0 22px; max-width: 520px; }
+  .hero .cta { display: flex; gap: 10px; flex-wrap: wrap; }
+  .hero .perks { display: flex; gap: 18px; margin-top: 26px; flex-wrap: wrap; font-size: 13px; color: #c7d2fe; }
+  .feature { align-self: center; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .15); border-radius: 20px; padding: 20px; display: grid; grid-template-columns: 110px 1fr; gap: 16px; align-items: center; backdrop-filter: blur(6px); }
+  .feature .pic { width: 110px; height: 110px; border-radius: 16px; display: grid; place-items: center; font-size: 56px; background: rgba(255, 255, 255, .12); }
+  .feature .tag { font-size: 12px; color: #a5b4fc; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  .feature .name { font-weight: 700; font-size: 17px; margin: 2px 0 6px; }
+  .feature .price { font-size: 24px; font-weight: 800; }
+
+  /* ---------- buttons ---------- */
+  .btn { border: 0; border-radius: 12px; padding: 11px 18px; font-weight: 700; background: var(--accent); color: #fff; transition: .15s; }
+  .btn:hover:not(:disabled) { filter: brightness(1.08); }
+  .btn:disabled { opacity: .45; }
+  .btn.white { background: #fff; color: var(--ink); }
+  .btn.ghost { background: transparent; color: #fff; border: 1.5px solid rgba(255, 255, 255, .4); }
+  .btn.light { background: var(--accent-soft); color: var(--accent); }
+  .btn.dark { background: var(--ink); }
+  .btn.block { width: 100%; }
+  .btn.sm { padding: 7px 12px; font-size: 13px; border-radius: 10px; }
+  .link { border: 0; background: none; color: var(--accent); padding: 0; font-weight: 600; }
+  .link.danger { color: var(--bad); }
+
+  /* ---------- catalog ---------- */
+  .toolbar { display: flex; align-items: center; gap: 14px; margin: 28px 0 16px; flex-wrap: wrap; }
+  .toolbar h2 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
+  .toolbar .count { color: var(--muted); }
+  .toolbar .right { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .toolbar select { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: #fff; }
+  .check { display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+
+  .notice { display: flex; gap: 12px; align-items: center; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; font-size: 14px; }
+  .notice .ni { font-size: 20px; line-height: 1.2; }
+  .notice b { display: block; }
+  .notice small { color: inherit; opacity: .8; }
+  .notice.warn { background: var(--warn-soft); color: #78350f; border: 1px solid #fde68a; }
+  .notice.bad { background: var(--bad-soft); color: #7f1d1d; border: 1px solid #fecaca; }
+  .notice.info { background: var(--accent-soft); color: #1e3a8a; border: 1px solid #c7d2fe; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; margin-bottom: 40px; }
+  .grid.stale .card { opacity: .55; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; transition: .18s; cursor: pointer; }
+  .card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: #cbd5e1; }
+  .card .pic { height: 150px; border-radius: 12px; display: grid; place-items: center; font-size: 64px; position: relative; }
+  .card .stock-tag { position: absolute; left: 10px; top: 10px; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: #fff; }
+  .stock-tag.in { color: var(--ok); }
+  .stock-tag.low { color: var(--warn); }
+  .stock-tag.out { color: var(--bad); }
+  .card .cat-name { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .card .name { font-weight: 700; line-height: 1.3; min-height: 40px; }
+  .card .desc { color: var(--muted); font-size: 13px; flex: 1; }
+  .card .bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+  .card .price { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+  .card .add { width: 44px; height: 44px; border-radius: 12px; border: 0; background: var(--accent); color: #fff; font-size: 20px; }
+  .card .add.in-cart { background: var(--ok); }
+  .card .add:disabled { background: var(--line); color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); padding: 50px 20px; grid-column: 1 / -1; }
+  .empty .big { font-size: 44px; }
+  .skeleton { height: 330px; border-radius: var(--radius); background: linear-gradient(90deg, #eef2f7 25%, #f8fafc 50%, #eef2f7 75%); background-size: 200% 100%; animation: sk 1.2s infinite; }
+  @keyframes sk { to { background-position: -200% 0; } }
+
+  /* category colours */
+  .c-smartphones { background: linear-gradient(135deg, #e0e7ff, #f5f3ff); }
+  .c-laptops { background: linear-gradient(135deg, #dbeafe, #e0f2fe); }
+  .c-tablets { background: linear-gradient(135deg, #fae8ff, #fdf4ff); }
+  .c-tv { background: linear-gradient(135deg, #dcfce7, #ecfeff); }
+  .c-monitors { background: linear-gradient(135deg, #cffafe, #e0f2fe); }
+  .c-audio { background: linear-gradient(135deg, #ffe4e6, #fff1f2); }
+  .c-wearables { background: linear-gradient(135deg, #fef3c7, #fff7ed); }
+  .c-gaming { background: linear-gradient(135deg, #ede9fe, #fce7f3); }
+  .c-accessories { background: linear-gradient(135deg, #f1f5f9, #e2e8f0); }
+
+  /* ---------- footer ---------- */
+  footer { background: var(--ink); color: #94a3b8; margin-top: 30px; font-size: 14px; }
+  footer .cols { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 30px; padding: 36px 24px 22px; }
+  footer h4 { color: #fff; margin: 0 0 10px; font-size: 15px; }
+  footer p { margin: 0 0 6px; }
+  .sys { border-top: 1px solid #1e293b; padding: 14px 24px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 12.5px; }
+  .sys .dotline { display: flex; gap: 14px; flex-wrap: wrap; }
+  .sys span.s { display: inline-flex; align-items: center; gap: 6px; }
+  .sys i { width: 8px; height: 8px; border-radius: 50%; background: #475569; display: inline-block; }
+  .sys i.up { background: #22c55e; }
+  .sys i.down { background: #ef4444; }
+
+  /* ---------- drawers & modals ---------- */
+  .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, .5); opacity: 0; pointer-events: none; transition: .2s; z-index: 40; }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .drawer { position: fixed; top: 0; right: 0; height: 100%; width: min(440px, 100vw); background: var(--surface); z-index: 41; transform: translateX(100%); transition: transform .25s ease; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
+  .drawer.show { transform: none; }
+  .drawer .head { display: flex; align-items: center; gap: 10px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+  .drawer .head h3 { margin: 0; font-size: 19px; }
+  .close { margin-left: auto; border: 0; background: var(--bg); width: 36px; height: 36px; border-radius: 10px; font-size: 18px; }
+  .drawer .body { flex: 1; overflow: auto; padding: 16px 20px; }
+  .drawer .foot { border-top: 1px solid var(--line); padding: 16px 20px; }
+
+  .line { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .line .thumb { width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center; font-size: 28px; }
+  .line .nm { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .line .pr { color: var(--muted); font-size: 13px; }
+  .line .err { color: var(--bad); font-size: 12px; }
+  .stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .stepper button { width: 32px; height: 32px; border: 0; background: #fff; font-size: 16px; }
+  .stepper button:disabled { color: #cbd5e1; }
+  .stepper span { min-width: 30px; text-align: center; font-weight: 700; }
+  .sum { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 4px; }
+  .sum.total { font-size: 20px; font-weight: 800; margin: 8px 0 14px; }
+
+  .order { border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .order .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .order .top b { font-size: 16px; }
+  .order .date { color: var(--muted); font-size: 12.5px; }
+  .order .items { font-size: 13.5px; color: var(--ink-2); margin: 8px 0; }
+  .order .addr { font-size: 12.5px; color: var(--muted); margin-bottom: 10px; }
+  .order .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .chip { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #f1f5f9; color: var(--ink-2); }
+  .chip.ok { background: var(--ok-soft); color: #166534; }
+  .chip.bad { background: var(--bad-soft); color: #991b1b; }
+  .chip.warn { background: var(--warn-soft); color: #92400e; }
+  .chip.off { background: #fff; color: var(--muted); border: 1px dashed #cbd5e1; }
+  .order .row .link { margin-left: auto; font-size: 13px; }
+
+  .note { padding: 12px 14px; border-radius: 12px; margin-bottom: 8px; background: var(--bg); cursor: pointer; border-left: 3px solid var(--accent); }
+  .note.read { border-left-color: transparent; cursor: default; opacity: .75; }
+  .note .s { font-weight: 700; font-size: 14px; }
+  .note .m { font-size: 13px; color: var(--ink-2); }
+  .note .t { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+  .modal { position: fixed; inset: 0; display: grid; place-items: center; z-index: 50; padding: 16px; pointer-events: none; }
+  .modal .box { width: min(480px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--surface); border-radius: 20px; box-shadow: var(--shadow-lg); padding: 26px; transform: scale(.96); opacity: 0; transition: .18s; pointer-events: none; position: relative; }
+  .modal.wide .box { width: min(760px, 100%); }
+  .modal.show .box { transform: none; opacity: 1; pointer-events: auto; }
+  .modal h3 { margin: 0 0 4px; font-size: 22px; }
+  .modal .sub { color: var(--muted); margin: 0 0 18px; font-size: 14px; }
+  .modal .close { position: absolute; right: 16px; top: 16px; }
+
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); padding: 4px; border-radius: 12px; margin-bottom: 18px; }
+  .tabs button { border: 0; background: none; padding: 9px; border-radius: 9px; font-weight: 700; color: var(--muted); }
+  .tabs button.active { background: #fff; color: var(--ink); box-shadow: var(--shadow-sm); }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-weight: 600; font-size: 13.5px; margin-bottom: 6px; }
+  .field label .opt { color: var(--muted); font-weight: 400; }
+  .field .ctrl { position: relative; }
+  .field input, .field textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 11px; padding: 11px 13px; outline: none; background: #fff; transition: .15s; }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .field.invalid input, .field.invalid textarea { border-color: var(--bad); background: #fffafa; }
+  .field.invalid input:focus, .field.invalid textarea:focus { box-shadow: 0 0 0 4px var(--bad-soft); }
+  .field.valid input, .field.valid textarea { border-color: #86efac; }
+  .field .msg { font-size: 12.5px; color: var(--bad); margin-top: 5px; min-height: 0; }
+  .field .help { font-size: 12.5px; color: var(--muted); margin-top: 5px; }
+  .field .eye { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: var(--muted); font-size: 13px; padding: 6px; }
+  .field .counter { float: right; font-weight: 400; color: var(--muted); font-size: 12px; }
+  .meter { height: 5px; background: var(--line); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .meter div { height: 100%; width: 0; transition: .2s; border-radius: 3px; }
+  .form-error { background: var(--bad-soft); color: #991b1b; border-radius: 10px; padding: 10px 12px; font-size: 13.5px; margin-bottom: 14px; display: none; }
+  .form-error.show { display: block; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .checkline { display: flex; gap: 8px; align-items: center; font-size: 14px; margin: 4px 0 16px; color: var(--ink-2); }
+  .summary-box { background: var(--bg); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; font-size: 14px; }
+  .summary-box .li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+  .summary-box .tot { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 8px; font-weight: 800; font-size: 17px; }
+
+  .pd { display: grid; grid-template-columns: 280px 1fr; gap: 26px; }
+  .pd .pic { height: 280px; border-radius: 18px; display: grid; place-items: center; font-size: 120px; }
+  .pd .cat-name { color: var(--muted); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .pd h3 { font-size: 24px; margin: 4px 0 10px; }
+  .pd .desc { color: var(--ink-2); }
+  .pd .price { font-size: 30px; font-weight: 800; margin: 16px 0; }
+  .pd .buy { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .pd ul { padding-left: 18px; color: var(--muted); font-size: 13.5px; }
+
+  .toast-box { position: fixed; top: 84px; right: 20px; z-index: 60; display: grid; gap: 8px; width: min(380px, calc(100vw - 32px)); }
+  .toast { background: var(--ink); color: #fff; padding: 12px 16px; border-radius: 12px; box-shadow: var(--shadow-lg); font-size: 14px; animation: tin .2s; }
+  .toast.ok { background: #14532d; }
+  .toast.bad { background: #7f1d1d; }
+  @keyframes tin { from { opacity: 0; transform: translateY(10px); } }
+
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: 1fr; padding: 30px 24px; }
+    .hero h1 { font-size: 30px; }
+    .act .t { display: none; }
+    .act { min-width: 0; }
+    .cart-btn .t { display: none; }
+    footer .cols { grid-template-columns: 1fr; }
+    .pd { grid-template-columns: 1fr; }
+    .pd .pic { height: 190px; font-size: 90px; }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 14px; }
+    header.main .wrap { flex-wrap: wrap; height: auto; padding-top: 10px; padding-bottom: 10px; gap: 10px; }
+    .search { order: 3; flex-basis: 100%; max-width: none; }
+    .logo small { display: none; }
+    .feature { grid-template-columns: 80px 1fr; }
+    .feature .pic { width: 80px; height: 80px; font-size: 40px; }
+    .row2 { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .card .pic { height: 120px; font-size: 52px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="promo"><div class="wrap">
+  <span>🚚 Бесплатная доставка за 1–2 дня</span><span>🛡️ Гарантия 2 года</span><span>↩️ Обмен и возврат 14 дней</span>
+</div></div>
+
+<header class="main"><div class="wrap">
+  <a class="logo" href="#" id="home"><span class="mark">⚡</span><span><b>ShopHub</b><small>магазин техники</small></span></a>
+  <label class="search">
+    <span class="ico">🔍</span>
+    <input id="search" type="search" placeholder="Поиск: смартфон, ноутбук, наушники…" maxlength="100" autocomplete="off">
+  </label>
+  <div class="actions">
+    <button class="act" id="btn-orders" title="Мои заказы"><span class="i">📦</span><span class="t">Заказы</span><span class="badge blue" id="orders-badge" hidden></span></button>
+    <button class="act" id="btn-notes" title="Уведомления"><span class="i">🔔</span><span class="t">Уведомления</span><span class="badge" id="notes-badge" hidden></span></button>
+    <button class="act" id="btn-user" title="Профиль"><span class="i">👤</span><span class="t" id="user-label">Войти</span></button>
+    <button class="cart-btn" id="btn-cart"><span>🛒</span><span class="t" id="cart-sum">Корзина</span><span class="badge" id="cart-badge" hidden></span></button>
+  </div>
+</div></header>
+
+<nav class="cats"><div class="wrap" id="cats"></div></nav>
+
+<main class="wrap">
+  <section id="hero"></section>
+
+  <div class="toolbar">
+    <h2 id="list-title">Каталог</h2>
+    <span class="count" id="list-count"></span>
+    <div class="right">
+      <label class="check"><input type="checkbox" id="only-stock"> Только в наличии</label>
+      <select id="sort" aria-label="Сортировка">
+        <option value="popular">По популярности</option>
+        <option value="cheap">Сначала дешевле</option>
+        <option value="expensive">Сначала дороже</option>
+        <option value="name">По названию</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="catalog-notice"></div>
+  <div class="grid" id="grid">
+    <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap cols">
+    <div>
+      <h4>⚡ ShopHub</h4>
+      <p>Учебный интернет-магазин техники. Каждая часть магазина — отдельный микросервис в своём Docker-контейнере:
+         вход, профили, каталог, заказы, оплата и уведомления. Если один из них недоступен, остальные продолжают работать.</p>
+    </div>
+    <div>
+      <h4>Покупателям</h4>
+      <p>Доставка и оплата</p><p>Гарантия и возврат</p><p>Лимит оплаты картой — 5 000 $</p>
+    </div>
+    <div>
+      <h4>Контакты</h4>
+      <p>📞 +373 22 000 000</p><p>✉️ support@shophub.example</p><p>Ежедневно 9:00–21:00</p>
+    </div>
+  </div>
+  <div class="wrap sys">
+    <span>Состояние сервисов:</span>
+    <div class="dotline" id="sys"></div>
+  </div>
+</footer>
+
+<!-- ============ drawers ============ -->
+<div class="overlay" id="overlay"></div>
+
+<aside class="drawer" id="drawer-cart" aria-label="Корзина">
+  <div class="head"><h3>🛒 Корзина</h3><button class="close" data-close>✕</button></div>
+  <div class="body" id="cart-body"></div>
+  <div class="foot" id="cart-foot"></div>
+</aside>
+
+<aside class="drawer" id="drawer-orders" aria-label="Мои заказы">
+  <div class="head"><h3>📦 Мои заказы</h3><button class="close" data-close>✕</button></div>
+  <div class="body" id="orders-body"></div>
+</aside>
+
+<aside class="drawer" id="drawer-notes" aria-label="Уведомления">
+  <div class="head"><h3>🔔 Уведомления</h3><button class="close" data-close>✕</button></div>
+  <div class="body" id="notes-body"></div>
+</aside>
+
+<!-- ============ modals ============ -->
+<div class="modal wide" id="modal-product"><div class="box" id="product-box"></div></div>
+
+<div class="modal" id="modal-auth"><div class="box">
+  <button class="close" data-close>✕</button>
+  <h3 id="auth-title">Вход</h3>
+  <p class="sub" id="auth-sub">Войдите, чтобы оформлять заказы и следить за доставкой.</p>
+  <div id="auth-notice"></div>
+  <div class="tabs"><button type="button" data-tab="login" class="active">Вход</button><button type="button" data-tab="register">Регистрация</button></div>
+  <form id="form-auth" novalidate>
+    <div class="form-error" id="auth-error"></div>
+    <div class="field" data-for="full_name" hidden>
+      <label for="a-name">Имя и фамилия</label>
+      <div class="ctrl"><input id="a-name" name="full_name" autocomplete="name" maxlength="100" placeholder="Анна Иванова"></div>
+      <div class="msg"></div>
+    </div>
+    <div class="field" data-for="email">
+      <label for="a-email">Email</label>
+      <div class="ctrl"><input id="a-email" name="email" type="email" autocomplete="email" maxlength="255" placeholder="anna@example.com"></div>
+      <div class="msg"></div>
+    </div>
+    <div class="field" data-for="password">
+      <label for="a-pass">Пароль</label>
+      <div class="ctrl"><input id="a-pass" name="password" type="password" autocomplete="current-password" maxlength="128" placeholder="••••••••"><button type="button" class="eye" data-eye="a-pass">показать</button></div>
+      <div class="msg"></div>
+      <div class="help" id="pass-help" hidden>Минимум 8 символов, хотя бы одна буква и одна цифра.</div>
+      <div class="meter" id="pass-meter" hidden><div></div></div>
+    </div>
+    <div class="field" data-for="password2" hidden>
+      <label for="a-pass2">Повторите пароль</label>
+      <div class="ctrl"><input id="a-pass2" name="password2" type="password" autocomplete="new-password" maxlength="128" placeholder="••••••••"></div>
+      <div class="msg"></div>
+    </div>
+    <button class="btn block" type="submit" id="auth-submit">Войти</button>
+  </form>
+</div></div>
+
+<div class="modal" id="modal-checkout"><div class="box">
+  <button class="close" data-close>✕</button>
+  <h3>Оформление заказа</h3>
+  <p class="sub">Укажите, куда и кому доставить заказ.</p>
+  <div id="checkout-notice"></div>
+  <div class="summary-box" id="checkout-summary"></div>
+  <form id="form-checkout" novalidate>
+    <div class="form-error" id="checkout-error"></div>
+    <div class="field" data-for="delivery.recipient">
+      <label for="c-name">Получатель</label>
+      <div class="ctrl"><input id="c-name" name="recipient" autocomplete="name" maxlength="100" placeholder="Анна Иванова"></div>
+      <div class="msg"></div>
+    </div>
+    <div class="field" data-for="delivery.phone">
+      <label for="c-phone">Телефон</label>
+      <div class="ctrl"><input id="c-phone" name="phone" type="tel" autocomplete="tel" maxlength="20" placeholder="+373 69 123 456"></div>
+      <div class="msg"></div>
+    </div>
+    <div class="field" data-for="delivery.address">
+      <label for="c-addr">Адрес доставки</label>
+      <div class="ctrl"><input id="c-addr" name="address" autocomplete="street-address" maxlength="255" placeholder="Город, улица, дом, квартира"></div>
+      <div class="msg"></div>
+    </div>
+    <div class="field" data-for="delivery.comment">
+      <label for="c-comment">Комментарий курьеру <span class="opt">(необязательно)</span><span class="counter" id="comment-counter">0 / 500</span></label>
+      <div class="ctrl"><textarea id="c-comment" name="comment" maxlength="500" placeholder="Например: позвонить за час"></textarea></div>
+      <div class="msg"></div>
+    </div>
+    <label class="checkline"><input type="checkbox" id="c-save" checked> Сохранить телефон и адрес в профиле</label>
+    <button class="btn block" type="submit" id="checkout-submit">Подтвердить заказ</button>
+  </form>
+</div></div>
+
+<div class="modal" id="modal-profile"><div class="box">
+  <button class="close" data-close>✕</button>
+  <h3>Профиль</h3>
+  <p class="sub" id="profile-email"></p>
+  <div id="profile-notice"></div>
+  <form id="form-profile" novalidate>
+    <div class="form-error" id="profile-error"></div>
+    <div class="field" data-for="full_name">
+      <label for="p-name">Имя и фамилия</label>
+      <div class="ctrl"><input id="p-name" name="full_name" autocomplete="name" maxlength="100"></div>
+      <div class="msg"></div>
+    </div>
+    <div class="field" data-for="phone">
+      <label for="p-phone">Телефон <span class="opt">(необязательно)</span></label>
+      <div class="ctrl"><input id="p-phone" name="phone" type="tel" autocomplete="tel" maxlength="20" placeholder="+373 69 123 456"></div>
+      <div class="msg"></div>
+    </div>
+    <div class="field" data-for="address">
+      <label for="p-addr">Адрес доставки <span class="opt">(необязательно)</span></label>
+      <div class="ctrl"><input id="p-addr" name="address" autocomplete="street-address" maxlength="255" placeholder="Город, улица, дом, квартира"></div>
+      <div class="msg"></div>
+    </div>
+    <div class="row2">
+      <button class="btn" type="submit" id="profile-submit">Сохранить</button>
+      <button class="btn light" type="button" id="logout">Выйти</button>
+    </div>
+  </form>
+</div></div>
+
+<div class="toast-box" id="toasts"></div>
+
+<script>
+"use strict";
+
+/* ==================================================================== config */
+const HOST = location.hostname || "localhost";
+const SERVICES = {
+  auth:         { name: "auth-service",         label: "Вход",        port: 8001 },
+  user:         { name: "user-service",         label: "Профили",     port: 8002 },
+  product:      { name: "product-service",      label: "Каталог",     port: 8003 },
+  order:        { name: "order-service",        label: "Заказы",      port: 8004 },
+  payment:      { name: "payment-service",      label: "Оплата",      port: 8005 },
+  notification: { name: "notification-service", label: "Уведомления", port: 8006 },
+};
+const CATEGORIES = [
+  { key: "all",         title: "Все товары",  icon: "✨" },
+  { key: "smartphones", title: "Смартфоны",   icon: "📱" },
+  { key: "laptops",     title: "Ноутбуки",    icon: "💻" },
+  { key: "tablets",     title: "Планшеты",    icon: "📲" },
+  { key: "tv",          title: "Телевизоры",  icon: "📺" },
+  { key: "monitors",    title: "Мониторы",    icon: "🖥️" },
+  { key: "audio",       title: "Аудио",       icon: "🎧" },
+  { key: "wearables",   title: "Умные часы",  icon: "⌚" },
+  { key: "gaming",      title: "Игры",        icon: "🎮" },
+  { key: "accessories", title: "Аксессуары",  icon: "⌨️" },
+];
+const CAT = Object.fromEntries(CATEGORIES.map(c => [c.key, c]));
+const MAX_QTY = 100;
+
+/* ==================================================================== state */
+const state = {
+  up: Object.fromEntries(Object.keys(SERVICES).map(k => [k, null])),
+  products: [], productsLoaded: false, productsStale: false,
+  category: "all", search: "", sort: "popular", onlyStock: false,
+  cart: {}, token: null, user: null, profile: null,
+  orders: [], ordersOk: true, payments: {}, paymentsOk: true,
+  notes: { items: [], unread: 0 }, notesOk: true,
+  afterLogin: null,
+};
+
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem("shophub." + k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem("shophub." + k, JSON.stringify(v)); } catch { /* private mode */ } },
+  del(k) { try { localStorage.removeItem("shophub." + k); } catch { /* ignore */ } },
+};
+
+/* ==================================================================== helpers */
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = v => new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(v) || 0) + " $";
+const plural = (n, one, few, many) => { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many; };
+const fmtDate = s => new Date(s).toLocaleString("ru-RU", { day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit" });
+
+function productEmoji(p) {
+  const n = String(p.name).toLowerCase();
+  const map = [["колонк", "🔊"], ["мыш", "🖱️"], ["геймпад", "🎮"], ["консол", "🕹️"], ["наушник", "🎧"], ["клавиатур", "⌨️"], ["часы", "⌚"]];
+  for (const [k, e] of map) if (n.includes(k)) return e;
+  return (CAT[p.category] || CAT.accessories).icon;
+}
+const catClass = p => "c-" + (CAT[p.category] ? p.category : "accessories");
+
+function toast(text, kind = "") {
+  const t = document.createElement("div");
+  t.className = "toast " + kind;
+  t.textContent = text;
+  $("#toasts").append(t);
+  setTimeout(() => t.remove(), 3800);
+}
+
+function notice(kind, icon, title) {
+  return `<div class="notice ${kind}"><span class="ni">${icon}</span><div><b>${title}</b></div></div>`;
+}
+
+/* ==================================================================== API */
+async function api(key, path, { method = "GET", body, timeout = 5000 } = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  const headers = {};
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (state.token) headers.Authorization = "Bearer " + state.token;
+  try {
+    const res = await fetch(`http://${HOST}:${SERVICES[key].port}${path}`, {
+      method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: ctrl.signal,
+    });
+    let data = null;
+    try { data = await res.json(); } catch { /* empty body */ }
+    setUp(key, true);
+    if (res.ok) return { ok: true, status: res.status, data };
+    const err = (data && data.error) || {};
+    if (res.status === 401 && state.token && key !== "auth") { logout(true); }
+    return { ok: false, status: res.status, error: err.message || "Ошибка запроса", details: err.details || [], code: err.code };
+  } catch {
+    setUp(key, false);
+    return { ok: false, status: 0, down: true, error: `${SERVICES[key].label}: временно недоступно` };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function setUp(key, up) {
+  if (state.up[key] === up) return;
+  const was = state.up[key];
+  state.up[key] = up;
+  renderSys();
+  if (was === false && up) refreshFor(key);
+  if (key === "product") renderCatalog();
+  if (key === "order" || key === "payment") { renderCart(); renderOrders(); }
+  if (key === "notification") renderNotes();
+  if (key === "auth") renderAuthNotice();
+  if (key === "user") renderProfileNotice();
+}
+
+async function healthCheck() {
+  await Promise.all(Object.keys(SERVICES).map(async key => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 2000);
+    try {
+      const r = await fetch(`http://${HOST}:${SERVICES[key].port}/health`, { signal: ctrl.signal });
+      setUp(key, r.ok);
+    } catch { setUp(key, false); } finally { clearTimeout(timer); }
+  }));
+}
+
+/* ==================================================================== validation (same rules as the server) */
+const RULES = {
+  email(v) {
+    v = v.trim();
+    if (!v) return "Введите email";
+    if (v.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return "Введите корректный email, например anna@example.com";
+  },
+  password(v) {
+    if (!v) return "Введите пароль";
+    if (v.length < 8 || v.length > 128) return "Пароль должен содержать от 8 до 128 символов";
+    if (!/[A-Za-zА-Яа-яЁё]/.test(v) || !/\d/.test(v)) return "Пароль должен содержать хотя бы одну букву и одну цифру";
+    if (v.trim() !== v) return "Пароль не должен начинаться или заканчиваться пробелом";
+  },
+  loginPassword(v) { if (!v) return "Введите пароль"; },
+  name(v) {
+    v = v.trim().replace(/\s+/g, " ");
+    if (!v) return "Укажите имя";
+    if (v.length < 2 || v.length > 100) return "Имя должно содержать от 2 до 100 символов";
+    if (!/^[A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё .'\-]*$/.test(v)) return "Имя может содержать только буквы, пробелы, дефис и апостроф";
+  },
+  phone(v) {
+    v = v.trim();
+    if (!v) return "Укажите телефон";
+    const digits = v.replace(/\D/g, "").length;
+    if (!/^\+?[0-9 ()\-]+$/.test(v) || digits < 10 || digits > 15) return "Телефон должен содержать от 10 до 15 цифр, например +373 69 123 456";
+  },
+  address(v) {
+    v = v.trim().replace(/\s+/g, " ");
+    if (!v) return "Укажите адрес";
+    if (v.length < 5 || v.length > 255) return "Адрес должен содержать от 5 до 255 символов";
+    if (!/[A-Za-zА-Яа-яЁё]/.test(v)) return "Укажите улицу, дом и город";
+  },
+  comment(v) { if (v.trim().length > 500) return "Максимум 500 символов"; },
+  optional(rule) { return v => (v.trim() ? RULES[rule](v) : undefined); },
+};
+
+function fieldOf(input) { return input.closest(".field"); }
+function setFieldError(field, msg) {
+  if (!field) return;
+  field.classList.toggle("invalid", !!msg);
+  field.classList.toggle("valid", !msg && !!field.querySelector("input, textarea").value.trim());
+  field.querySelector(".msg").textContent = msg || "";
+  field.querySelector("input, textarea").setAttribute("aria-invalid", msg ? "true" : "false");
+}
+function clearForm(form) {
+  form.querySelectorAll(".field").forEach(f => { f.classList.remove("invalid", "valid"); f.querySelector(".msg").textContent = ""; });
+  const e = form.querySelector(".form-error"); if (e) { e.classList.remove("show"); e.textContent = ""; }
+}
+function formError(form, text) {
+  const e = form.querySelector(".form-error");
+  e.textContent = text; e.classList.toggle("show", !!text);
+}
+
+/** Validate a set of [input, rule] pairs, show messages, focus the first wrong field. */
+function validate(pairs) {
+  let first = null;
+  for (const [input, rule] of pairs) {
+    const field = fieldOf(input);
+    if (field.hidden) continue;
+    const msg = rule(input.value);
+    setFieldError(field, msg);
+    if (msg && !first) first = input;
+  }
+  if (first) first.focus();
+  return !first;
+}
+
+/** Live validation: after the first blur, re-check while typing. */
+function liveValidate(input, rule) {
+  let touched = false;
+  input.addEventListener("blur", () => { touched = true; if (input.value) setFieldError(fieldOf(input), rule(input.value)); });
+  input.addEventListener("input", () => { if (touched) setFieldError(fieldOf(input), rule(input.value)); });
+}
+
+/** Put server-side 422 messages under the matching fields. */
+function showServerErrors(form, res) {
+  let placed = false;
+  for (const d of res.details || []) {
+    const field = form.querySelector(`.field[data-for="${d.field}"]`);
+    if (field && !field.hidden) { setFieldError(field, d.message); placed = true; }
+  }
+  if (!placed) formError(form, res.error);
+}
+
+/* ==================================================================== data */
+async function loadProducts() {
+  const r = await api("product", "/products?limit=100");
+  if (r.ok) {
+    state.products = r.data.items;
+    state.productsLoaded = true;
+    state.productsStale = false;
+    store.set("products", state.products);
+  } else if (r.down) {
+    state.productsStale = state.products.length > 0;
+  }
+  renderCatalog(); renderHero(); renderCart();
+}
+
+async function loadOrders() {
+  if (!state.token) return;
+  const r = await api("order", "/orders?limit=30");
+  state.ordersOk = r.ok;
+  if (r.ok) state.orders = r.data.items;
+  const p = await api("payment", "/payments?limit=100");
+  state.paymentsOk = p.ok;
+  if (p.ok) state.payments = Object.fromEntries(p.data.items.map(x => [x.order_id, x]));
+  renderOrders();
+}
+
+async function loadNotes() {
+  if (!state.token) return;
+  const r = await api("notification", "/notifications?limit=30");
+  state.notesOk = r.ok;
+  if (r.ok) state.notes = r.data;
+  renderNotes();
+}
+
+async function loadProfile() {
+  if (!state.token) return;
+  const r = await api("user", "/users/me");
+  if (r.ok) state.profile = r.data;
+}
+
+function refreshFor(key) {
+  if (key === "product") loadProducts();
+  if (key === "order" || key === "payment") loadOrders();
+  if (key === "notification") loadNotes();
+  if (key === "user") loadProfile();
+}
+
+/* ==================================================================== rendering: catalog */
+function renderCats() {
+  $("#cats").innerHTML = CATEGORIES.map(c =>
+    `<button class="cat ${state.category === c.key ? "active" : ""}" data-cat="${c.key}"><span>${c.icon}</span>${c.title}</button>`).join("");
+}
+
+function renderHero() {
+  const box = $("#hero");
+  if (state.category !== "all" || state.search) { box.innerHTML = ""; return; }
+  const featured = [...state.products].filter(p => p.stock > 0).sort((a, b) => b.price - a.price)[0];
+  box.innerHTML = `<div class="hero">
+    <div>
+      <span class="kicker">Новый сезон техники</span>
+      <h1>Техника, которая работает так же надёжно, как наш магазин</h1>
+      <p>Смартфоны, ноутбуки, телевизоры, аудио и аксессуары. Оформление за минуту, оплата картой, уведомления о каждом шаге заказа.</p>
+      <div class="cta">
+        <button class="btn white" data-cat="smartphones">📱 Смартфоны</button>
+        <button class="btn ghost" data-cat="laptops">💻 Ноутбуки</button>
+      </div>
+      <div class="perks"><span>✔ Официальная гарантия</span><span>✔ Доставка 1–2 дня</span><span>✔ Возврат 14 дней</span></div>
+    </div>
+    ${featured ? `<div class="feature" data-open="${featured.id}" style="cursor:pointer">
+      <div class="pic">${productEmoji(featured)}</div>
+      <div><div class="tag">Хит недели</div><div class="name">${esc(featured.name)}</div>
+      <div class="price">${money(featured.price)}</div></div></div>` : ""}
+  </div>`;
+}
+
+function visibleProducts() {
+  const q = state.search.toLowerCase();
+  let list = state.products.filter(p =>
+    (state.category === "all" || p.category === state.category) &&
+    (!q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)) &&
+    (!state.onlyStock || p.stock > 0));
+  if (state.sort === "cheap") list.sort((a, b) => a.price - b.price);
+  if (state.sort === "expensive") list.sort((a, b) => b.price - a.price);
+  if (state.sort === "name") list.sort((a, b) => a.name.localeCompare(b.name, "ru"));
+  return list;
+}
+
+function stockTag(p) {
+  if (p.stock <= 0) return `<span class="stock-tag out">Нет в наличии</span>`;
+  if (p.stock <= 5) return `<span class="stock-tag low">Осталось ${p.stock} шт.</span>`;
+  return `<span class="stock-tag in">В наличии</span>`;
+}
+
+function renderCatalog() {
+  const cat = CAT[state.category];
+  $("#list-title").textContent = state.search ? `Поиск: «${state.search}»` : cat.title;
+  const noticeBox = $("#catalog-notice");
+  const grid = $("#grid");
+
+  if (state.up.product === false) {
+    noticeBox.innerHTML = notice("warn", "⚠️", "Каталог временно не обновляется");
+  } else noticeBox.innerHTML = "";
+  grid.classList.toggle("stale", state.up.product === false && state.products.length > 0);
+
+  if (!state.products.length) {
+    $("#list-count").textContent = "";
+    grid.innerHTML = state.up.product === false
+      ? `<div class="empty"><div class="big">📦</div>Каталог временно не обновляется</div>`
+      : `<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>`;
+    return;
+  }
+  const list = visibleProducts();
+  $("#list-count").textContent = `${list.length} ${plural(list.length, "товар", "товара", "товаров")}`;
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty"><div class="big">🔍</div>Ничего не нашлось. Попробуйте другой запрос или категорию.</div>`;
+    return;
+  }
+  grid.innerHTML = list.map(p => {
+    const inCart = state.cart[p.id] || 0;
+    return `<article class="card" data-open="${p.id}">
+      <div class="pic ${catClass(p)}">${stockTag(p)}${productEmoji(p)}</div>
+      <div class="cat-name">${esc((CAT[p.category] || { title: p.category }).title)}</div>
+      <div class="name">${esc(p.name)}</div>
+      <div class="desc">${esc(p.description)}</div>
+      <div class="bottom">
+        <span class="price">${money(p.price)}</span>
+        <button class="add ${inCart ? "in-cart" : ""}" data-add="${p.id}" ${p.stock > 0 && inCart < Math.min(p.stock, MAX_QTY) ? "" : "disabled"}
+          title="${inCart ? "В корзине: " + inCart : "В корзину"}">${inCart ? "✓" : "＋"}</button>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+function openProduct(id) {
+  const p = state.products.find(x => x.id === Number(id));
+  if (!p) return;
+  const inCart = state.cart[p.id] || 0;
+  const max = Math.min(p.stock, MAX_QTY) - inCart;
+  $("#product-box").innerHTML = `<button class="close" data-close>✕</button>
+    <div class="pd">
+      <div class="pic ${catClass(p)}">${productEmoji(p)}</div>
+      <div>
+        <div class="cat-name">${esc((CAT[p.category] || { title: p.category }).title)}</div>
+        <h3>${esc(p.name)}</h3>
+        <div class="desc">${esc(p.description)}</div>
+        <div class="price">${money(p.price)}</div>
+        <div class="buy">
+          ${max > 0 ? `<span class="stepper"><button type="button" data-pd-dec>−</button><span id="pd-qty">1</span><button type="button" data-pd-inc data-max="${max}">+</button></span>
+          <button class="btn" data-pd-add="${p.id}">Добавить в корзину</button>` : `<button class="btn" disabled>${p.stock > 0 ? "Всё в корзине" : "Нет в наличии"}</button>`}
+        </div>
+        <ul><li>${p.stock > 0 ? `На складе: ${p.stock} шт.` : "Ожидается поступление"}</li><li>Гарантия 2 года</li><li>Доставка за 1–2 дня</li>
+        ${inCart ? `<li>Уже в корзине: ${inCart} шт.</li>` : ""}</ul>
+      </div>
+    </div>`;
+  openModal("modal-product");
+}
+
+/* ==================================================================== rendering: cart */
+function cartLines() {
+  const byId = Object.fromEntries(state.products.map(p => [p.id, p]));
+  return Object.entries(state.cart).filter(([, q]) => q > 0).map(([id, qty]) => ({ product: byId[id], id: Number(id), qty }));
+}
+function cartTotal() { return cartLines().reduce((s, l) => s + (l.product ? Number(l.product.price) * l.qty : 0), 0); }
+
+function renderCart() {
+  const lines = cartLines();
+  const count = lines.reduce((s, l) => s + l.qty, 0);
+  const badge = $("#cart-badge");
+  badge.hidden = !count; badge.textContent = count;
+  $("#cart-sum").textContent = count ? money(cartTotal()) : "Корзина";
+  store.set("cart", state.cart);
+
+  const body = $("#cart-body"), foot = $("#cart-foot");
+  if (!lines.length) {
+    body.innerHTML = `<div class="empty"><div class="big">🛒</div>В корзине пока пусто.<br>Загляните в каталог — там много интересного.</div>`;
+    foot.innerHTML = "";
+    return;
+  }
+  body.innerHTML = lines.map(l => {
+    const p = l.product || { name: "Товар №" + l.id, price: 0, stock: 0, category: "accessories" };
+    const err = p.stock < l.qty ? `<div class="err">На складе только ${p.stock} шт.</div>` : "";
+    return `<div class="line">
+      <div class="thumb ${catClass(p)}">${productEmoji(p)}</div>
+      <div><div class="nm">${esc(p.name)}</div><div class="pr">${money(p.price)} × ${l.qty} = <b>${money(Number(p.price) * l.qty)}</b></div>${err}
+        <button class="link danger" style="font-size:12.5px" data-remove="${l.id}">Удалить</button></div>
+      <span class="stepper"><button data-dec="${l.id}">−</button><span>${l.qty}</span><button data-inc="${l.id}" ${l.qty >= Math.min(p.stock, MAX_QTY) ? "disabled" : ""}>+</button></span>
+    </div>`;
+  }).join("");
+  const orderDown = state.up.order === false;
+  const invalid = lines.some(l => !l.product || l.product.stock < l.qty);
+  foot.innerHTML = `
+    ${orderDown ? notice("bad", "⛔", "Оформление заказов временно недоступно") : ""}
+    <div class="sum"><span>Товары (${lines.reduce((s, l) => s + l.qty, 0)})</span><span>${money(cartTotal())}</span></div>
+    <div class="sum"><span>Доставка</span><span>бесплатно</span></div>
+    <div class="sum total"><span>Итого</span><span>${money(cartTotal())}</span></div>
+    <button class="btn block" id="go-checkout" ${orderDown || invalid ? "disabled" : ""}>Перейти к оформлению</button>`;
+}
+
+function addToCart(id, qty = 1) {
+  const p = state.products.find(x => x.id === Number(id));
+  if (!p) return;
+  const now = state.cart[id] || 0;
+  const max = Math.min(p.stock, MAX_QTY);
+  if (now + qty > max) { toast(`Можно заказать не больше ${max} шт.`, "bad"); return; }
+  state.cart[id] = now + qty;
+  renderCart(); renderCatalog();
+  toast(`«${p.name}» в корзине`, "ok");
+}
+
+/* ==================================================================== rendering: orders, notes */
+const ORDER_STATUS = { pending_payment: ["⏳ Ожидает оплаты", "warn"], paid: ["✅ Оплачен", "ok"], payment_failed: ["❌ Оплата отклонена", "bad"], cancelled: ["🚫 Отменён", ""] };
+const PAY_STATUS = { completed: ["💳 Платёж прошёл", "ok"], failed: ["💳 Платёж отклонён", "bad"], refunded: ["↩️ Деньги возвращены", ""], cancelled: ["💳 Не списывался", ""] };
+
+function renderOrders() {
+  const active = state.orders.filter(o => o.status === "pending_payment").length;
+  const b = $("#orders-badge"); b.hidden = !active; b.textContent = active;
+  const box = $("#orders-body");
+  if (!state.token) { box.innerHTML = `<div class="empty"><div class="big">📦</div>Войдите, чтобы видеть свои заказы.<br><br><button class="btn" data-login>Войти</button></div>`; return; }
+  let html = "";
+  if (state.up.order === false) html += notice("bad", "⛔", "Заказы временно не обновляются");
+  if (state.up.payment === false) html += notice("warn", "💳", "Статус оплаты временно не обновляется");
+  if (!state.orders.length) { box.innerHTML = html + `<div class="empty"><div class="big">🧾</div>Заказов пока нет.</div>`; return; }
+  html += state.orders.map(o => {
+    const [st, cls] = ORDER_STATUS[o.status] || [o.status, ""];
+    const pay = state.payments[o.id];
+    let payChip;
+    if (!state.paymentsOk) payChip = `<span class="chip off">💳 нет данных об оплате</span>`;
+    else if (pay) { const [t, c] = PAY_STATUS[pay.status] || [pay.status, ""]; payChip = `<span class="chip ${c}" title="${esc(pay.failure_reason || "")}">${t}</span>`; }
+    else payChip = `<span class="chip warn">💳 Обрабатывается…</span>`;
+    const reason = pay && pay.failure_reason && pay.status === "failed" ? `<div class="addr" style="color:var(--bad)">Причина: ${esc(pay.failure_reason)}</div>` : "";
+    return `<div class="order">
+      <div class="top"><b>Заказ №${o.id}</b><b>${money(o.total_amount)}</b></div>
+      <div class="date">${fmtDate(o.created_at)}</div>
+      <div class="items">${o.items.map(i => `${esc(i.product_name)} × ${i.quantity}`).join("<br>")}</div>
+      ${o.delivery_address ? `<div class="addr">🚚 ${esc(o.recipient)}, ${esc(o.contact_phone)}<br>${esc(o.delivery_address)}${o.comment ? `<br>💬 ${esc(o.comment)}` : ""}</div>` : ""}
+      ${reason}
+      <div class="row"><span class="chip ${cls}">${st}</span>${payChip}
+        ${o.status !== "cancelled" ? `<button class="link danger" data-cancel="${o.id}">Отменить</button>` : ""}</div>
+    </div>`;
+  }).join("");
+  box.innerHTML = html;
+}
+
+function renderNotes() {
+  const unread = state.notesOk ? (state.notes.unread || 0) : 0;
+  const b = $("#notes-badge"); b.hidden = !unread; b.textContent = unread;
+  const box = $("#notes-body");
+  if (!state.token) { box.innerHTML = `<div class="empty"><div class="big">🔔</div>Войдите, чтобы получать уведомления о заказах.<br><br><button class="btn" data-login>Войти</button></div>`; return; }
+  let html = state.up.notification === false
+    ? notice("warn", "🔕", "Уведомления временно не обновляются")
+    : "";
+  const items = state.notes.items || [];
+  html += items.length ? items.map(n => `<div class="note ${n.is_read ? "read" : ""}" ${n.is_read ? "" : `data-read="${n.id}"`}>
+      <div class="s">${esc(n.subject)}</div><div class="m">${esc(n.message)}</div><div class="t">${fmtDate(n.created_at)}</div></div>`).join("")
+    : `<div class="empty"><div class="big">🔔</div>Уведомлений пока нет.</div>`;
+  box.innerHTML = html;
+}
+
+function renderUser() { $("#user-label").textContent = state.user ? (state.profile?.full_name?.split(" ")[0] || "Профиль") : "Войти"; }
+
+function renderSys() {
+  $("#sys").innerHTML = Object.entries(SERVICES).map(([k, s]) =>
+    `<span class="s" title="${s.name} :${s.port}"><i class="${state.up[k] === true ? "up" : state.up[k] === false ? "down" : ""}"></i>${s.label}</span>`).join("");
+}
+
+function renderAuthNotice() {
+  $("#auth-notice").innerHTML = state.up.auth === false
+    ? notice("bad", "🔐", "Вход и регистрация временно недоступны") : "";
+  $("#auth-submit").disabled = state.up.auth === false;
+}
+function renderProfileNotice() {
+  $("#profile-notice").innerHTML = state.up.user === false
+    ? notice("warn", "👤", "Профиль временно не обновляется") : "";
+  $("#profile-submit").disabled = state.up.user === false;
+}
+
+/* ==================================================================== drawers & modals */
+let openDrawerId = null;
+function openDrawer(id) {
+  closeAll();
+  openDrawerId = id;
+  $("#" + id).classList.add("show");
+  $("#overlay").classList.add("show");
+  if (id === "drawer-orders") loadOrders();
+  if (id === "drawer-notes") loadNotes();
+}
+function openModal(id) {
+  closeAll();
+  $("#" + id).classList.add("show");
+  $("#overlay").classList.add("show");
+  const first = $("#" + id).querySelector("input:not([type=checkbox])");
+  if (first) setTimeout(() => first.focus(), 60);
+}
+function closeAll() {
+  document.querySelectorAll(".drawer.show, .modal.show").forEach(e => e.classList.remove("show"));
+  $("#overlay").classList.remove("show");
+  openDrawerId = null;
+}
+
+/* ==================================================================== auth */
+let authMode = "login";
+function setAuthMode(mode) {
+  authMode = mode;
+  const reg = mode === "register";
+  document.querySelectorAll("#modal-auth .tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === mode));
+  $('[data-for="full_name"]').hidden = !reg;
+  $('[data-for="password2"]').hidden = !reg;
+  $("#pass-help").hidden = !reg;
+  $("#pass-meter").hidden = !reg;
+  $("#a-pass").autocomplete = reg ? "new-password" : "current-password";
+  $("#auth-title").textContent = reg ? "Регистрация" : "Вход";
+  $("#auth-submit").textContent = reg ? "Создать аккаунт" : "Войти";
+  clearForm($("#form-auth"));
+}
+function openLogin(sub, after) {
+  state.afterLogin = after || null;
+  $("#auth-sub").textContent = sub || "Войдите, чтобы оформлять заказы и следить за доставкой.";
+  setAuthMode("login");
+  renderAuthNotice();
+  openModal("modal-auth");
+}
+
+function passwordScore(v) {
+  let s = 0;
+  if (v.length >= 8) s++;
+  if (v.length >= 12) s++;
+  if (/[A-Za-zА-Яа-яЁё]/.test(v) && /\d/.test(v)) s++;
+  if (/[A-ZА-ЯЁ]/.test(v) && /[a-zа-яё]/.test(v)) s++;
+  if (/[^A-Za-zА-Яа-яЁё0-9]/.test(v)) s++;
+  return s;
+}
+
+async function submitAuth(e) {
+  e.preventDefault();
+  const form = $("#form-auth");
+  formError(form, "");
+  const reg = authMode === "register";
+  const email = $("#a-email"), pass = $("#a-pass"), name = $("#a-name"), pass2 = $("#a-pass2");
+  const ok = validate(reg
+    ? [[name, RULES.name], [email, RULES.email], [pass, RULES.password], [pass2, v => (!v ? "Повторите пароль" : v !== pass.value ? "Пароли не совпадают" : undefined)]]
+    : [[email, RULES.email], [pass, RULES.loginPassword]]);
+  if (!ok) return;
+
+  const btn = $("#auth-submit"); btn.disabled = true;
+  try {
+    if (reg) {
+      const r = await api("auth", "/auth/register", { method: "POST", body: { email: email.value.trim(), password: pass.value, full_name: name.value.trim() } });
+      if (!r.ok) { r.code === "email_taken" ? setFieldError(fieldOf(email), "Этот email уже зарегистрирован — войдите") : showServerErrors(form, r); return; }
+    }
+    const r = await api("auth", "/auth/login", { method: "POST", body: { email: email.value.trim(), password: pass.value } });
+    if (!r.ok) { formError(form, r.status === 401 ? "Неверный email или пароль" : r.error); return; }
+    state.token = r.data.access_token;
+    state.user = r.data.user;
+    store.set("session", { token: state.token, user: state.user });
+    await loadProfile();
+    renderUser();
+    closeAll();
+    toast(reg ? "Аккаунт создан. Добро пожаловать!" : "Вы вошли в аккаунт", "ok");
+    loadOrders(); loadNotes();
+    const next = state.afterLogin; state.afterLogin = null;
+    if (next) next();
+  } finally { btn.disabled = state.up.auth === false; }
+}
+
+function logout(expired) {
+  state.token = null; state.user = null; state.profile = null;
+  state.orders = []; state.payments = {}; state.notes = { items: [], unread: 0 };
+  store.del("session");
+  renderUser(); renderOrders(); renderNotes(); closeAll();
+  toast(expired ? "Сессия истекла — войдите снова" : "Вы вышли из аккаунта");
+}
+
+/* ==================================================================== checkout */
+function openCheckout() {
+  if (!state.token) { openLogin("Войдите или зарегистрируйтесь, чтобы оформить заказ.", openCheckout); return; }
+  const form = $("#form-checkout");
+  clearForm(form);
+  const p = state.profile || {};
+  if (!$("#c-name").value) $("#c-name").value = p.full_name || "";
+  if (!$("#c-phone").value) $("#c-phone").value = p.phone || "";
+  if (!$("#c-addr").value) $("#c-addr").value = p.address || "";
+  $("#comment-counter").textContent = `${$("#c-comment").value.length} / 500`;
+  const lines = cartLines(), total = cartTotal();
+  $("#checkout-summary").innerHTML = lines.map(l => `<div class="li"><span>${esc(l.product?.name || "Товар")} × ${l.qty}</span><span>${money(Number(l.product?.price || 0) * l.qty)}</span></div>`).join("")
+    + `<div class="li"><span>Доставка</span><span>бесплатно</span></div><div class="li tot"><span>К оплате</span><span>${money(total)}</span></div>`;
+  $("#checkout-notice").innerHTML = total > 5000
+    ? notice("info", "ℹ️", "Сумма больше лимита карты 5 000 $ — платёж будет отклонён") : "";
+  openModal("modal-checkout");
+}
+
+async function submitCheckout(e) {
+  e.preventDefault();
+  const form = $("#form-checkout");
+  formError(form, "");
+  const name = $("#c-name"), phone = $("#c-phone"), addr = $("#c-addr"), comment = $("#c-comment");
+  if (!validate([[name, RULES.name], [phone, RULES.phone], [addr, RULES.address], [comment, RULES.comment]])) return;
+  const items = cartLines().map(l => ({ product_id: l.id, quantity: l.qty }));
+  if (!items.length) { formError(form, "Корзина пуста"); return; }
+
+  const btn = $("#checkout-submit"); btn.disabled = true; btn.textContent = "Оформляем…";
+  try {
+    const delivery = { recipient: name.value.trim(), phone: phone.value.trim(), address: addr.value.trim(), comment: comment.value.trim() || null };
+    const r = await api("order", "/orders", { method: "POST", body: { items, delivery } });
+    if (!r.ok) {
+      if (r.status === 422) showServerErrors(form, r);
+      else if (r.status === 409 || r.status === 404) { formError(form, r.error); loadProducts(); }
+      else formError(form, r.down ? "Оформление заказов временно недоступно" : r.error);
+      return;
+    }
+    if ($("#c-save").checked) {
+      api("user", "/users/me", { method: "PATCH", body: { phone: delivery.phone, address: delivery.address } })
+        .then(res => { if (res.ok) state.profile = res.data; });
+    }
+    state.cart = {};
+    renderCart(); comment.value = "";
+    closeAll();
+    toast(`Заказ №${r.data.id} оформлен`, "ok");
+    loadProducts(); loadOrders();
+    setTimeout(() => openDrawer("drawer-orders"), 300);
+  } finally { btn.disabled = false; btn.textContent = "Подтвердить заказ"; }
+}
+
+/* ==================================================================== profile */
+function openProfile() {
+  if (!state.token) { openLogin(); return; }
+  const form = $("#form-profile");
+  clearForm(form);
+  const p = state.profile || {};
+  $("#profile-email").textContent = state.user.email;
+  $("#p-name").value = p.full_name || "";
+  $("#p-phone").value = p.phone || "";
+  $("#p-addr").value = p.address || "";
+  renderProfileNotice();
+  openModal("modal-profile");
+  loadProfile().then(() => {
+    const q = state.profile || {};
+    if (!$("#p-name").value) $("#p-name").value = q.full_name || "";
+    if (!$("#p-phone").value) $("#p-phone").value = q.phone || "";
+    if (!$("#p-addr").value) $("#p-addr").value = q.address || "";
+  });
+}
+
+async function submitProfile(e) {
+  e.preventDefault();
+  const form = $("#form-profile");
+  formError(form, "");
+  const name = $("#p-name"), phone = $("#p-phone"), addr = $("#p-addr");
+  if (!validate([[name, RULES.name], [phone, RULES.optional("phone")], [addr, RULES.optional("address")]])) return;
+  const body = { full_name: name.value.trim() };
+  if (phone.value.trim()) body.phone = phone.value.trim();
+  if (addr.value.trim()) body.address = addr.value.trim();
+  const r = await api("user", "/users/me", { method: "PATCH", body });
+  if (!r.ok) { r.status === 422 ? showServerErrors(form, r) : formError(form, r.error); return; }
+  state.profile = r.data;
+  renderUser(); closeAll();
+  toast("Профиль сохранён", "ok");
+}
+
+/* ==================================================================== events */
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-cat], [data-open], [data-add], [data-inc], [data-dec], [data-remove], [data-cancel], [data-read], [data-close], [data-tab], [data-login], [data-eye], [data-pd-inc], [data-pd-dec], [data-pd-add], button");
+  if (!t) return;
+  const d = t.dataset;
+  if (d.add !== undefined) { e.stopPropagation(); addToCart(d.add); return; }
+  if (d.cat) { state.category = d.cat; state.search = ""; $("#search").value = ""; renderCats(); renderHero(); renderCatalog(); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+  if (d.open) { openProduct(d.open); return; }
+  if (d.inc) { addToCart(d.inc); renderCart(); return; }
+  if (d.dec) { state.cart[d.dec]--; if (state.cart[d.dec] <= 0) delete state.cart[d.dec]; renderCart(); renderCatalog(); return; }
+  if (d.remove) { delete state.cart[d.remove]; renderCart(); renderCatalog(); return; }
+  if (d.cancel) { cancelOrder(d.cancel); return; }
+  if (d.read) { api("notification", `/notifications/${d.read}/read`, { method: "POST" }).then(loadNotes); return; }
+  if (d.close !== undefined) { closeAll(); return; }
+  if (d.tab) { setAuthMode(d.tab); return; }
+  if (d.login !== undefined) { openLogin(); return; }
+  if (d.eye) { const i = $("#" + d.eye); i.type = i.type === "password" ? "text" : "password"; t.textContent = i.type === "password" ? "показать" : "скрыть"; return; }
+  if (d.pdInc !== undefined) { const q = $("#pd-qty"); q.textContent = Math.min(Number(q.textContent) + 1, Number(d.max)); return; }
+  if (d.pdDec !== undefined) { const q = $("#pd-qty"); q.textContent = Math.max(Number(q.textContent) - 1, 1); return; }
+  if (d.pdAdd) { addToCart(d.pdAdd, Number($("#pd-qty").textContent)); closeAll(); return; }
+  switch (t.id) {
+    case "btn-cart": openDrawer("drawer-cart"); break;
+    case "btn-orders": openDrawer("drawer-orders"); break;
+    case "btn-notes": openDrawer("drawer-notes"); break;
+    case "btn-user": state.user ? openProfile() : openLogin(); break;
+    case "go-checkout": openCheckout(); break;
+    case "logout": logout(false); break;
+  }
+});
+
+async function cancelOrder(id) {
+  if (!confirm(`Отменить заказ №${id}? Если он оплачен, деньги вернутся на карту.`)) return;
+  const r = await api("order", `/orders/${id}/cancel`, { method: "POST" });
+  if (r.ok) { toast(`Заказ №${id} отменён`); loadOrders(); loadProducts(); }
+  else toast(r.error, "bad");
+}
+
+$("#overlay").addEventListener("click", closeAll);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });
+$("#home").addEventListener("click", e => { e.preventDefault(); state.category = "all"; state.search = ""; $("#search").value = ""; renderCats(); renderHero(); renderCatalog(); });
+$("#form-auth").addEventListener("submit", submitAuth);
+$("#form-checkout").addEventListener("submit", submitCheckout);
+$("#form-profile").addEventListener("submit", submitProfile);
+$("#sort").addEventListener("change", e => { state.sort = e.target.value; renderCatalog(); });
+$("#only-stock").addEventListener("change", e => { state.onlyStock = e.target.checked; renderCatalog(); });
+
+let searchTimer;
+$("#search").addEventListener("input", e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { state.search = e.target.value.trim().slice(0, 100); renderHero(); renderCatalog(); }, 200);
+});
+
+// live validation
+liveValidate($("#a-name"), RULES.name);
+liveValidate($("#a-email"), RULES.email);
+liveValidate($("#a-pass"), v => (authMode === "register" ? RULES.password(v) : RULES.loginPassword(v)));
+liveValidate($("#a-pass2"), v => (v !== $("#a-pass").value ? "Пароли не совпадают" : undefined));
+liveValidate($("#c-name"), RULES.name);
+liveValidate($("#c-phone"), RULES.phone);
+liveValidate($("#c-addr"), RULES.address);
+liveValidate($("#c-comment"), RULES.comment);
+liveValidate($("#p-name"), RULES.name);
+liveValidate($("#p-phone"), RULES.optional("phone"));
+liveValidate($("#p-addr"), RULES.optional("address"));
+$("#c-comment").addEventListener("input", e => { $("#comment-counter").textContent = `${e.target.value.length} / 500`; });
+$("#a-pass").addEventListener("input", e => {
+  const s = passwordScore(e.target.value), bar = $("#pass-meter div");
+  const colors = ["#ef4444", "#ef4444", "#f59e0b", "#eab308", "#22c55e", "#16a34a"];
+  bar.style.width = `${(s / 5) * 100}%`; bar.style.background = colors[s];
+});
+for (const id of ["c-phone", "p-phone"]) {
+  $("#" + id).addEventListener("input", e => { e.target.value = e.target.value.replace(/[^0-9+()\- ]/g, ""); });
+}
+
+/* ==================================================================== start */
+state.cart = store.get("cart") || {};
+state.products = store.get("products") || [];
+const saved = store.get("session");
+if (saved && saved.token) { state.token = saved.token; state.user = saved.user; }
+renderCats(); renderSys(); renderHero(); renderCatalog(); renderCart(); renderOrders(); renderNotes(); renderUser();
+loadProducts();
+if (state.token) { loadProfile().then(renderUser); loadOrders(); loadNotes(); }
+healthCheck();
+setInterval(healthCheck, 3000);
+setInterval(() => { if (state.up.product !== false) loadProducts(); }, 15000);
+setInterval(() => { if (state.token) { loadOrders(); loadNotes(); } }, 3000);
+</script>
+</body>
+</html>

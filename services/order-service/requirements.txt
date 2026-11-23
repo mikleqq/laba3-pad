@@ -1,0 +1,2 @@
+# Service-specific dependencies of order-service.
+# Common runtime deps (FastAPI, SQLAlchemy, aio-pika, httpx, PyJWT) come from libs/common.

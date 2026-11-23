@@ -1,0 +1,2 @@
+# Service-specific dependencies of auth-service.
+# Common runtime deps (FastAPI, SQLAlchemy, aio-pika, httpx, PyJWT) come from libs/common.
