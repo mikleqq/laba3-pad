@@ -1,0 +1,27 @@
+# Everything that "kubectl apply -k k8s" creates, in one list.
+# The Secret is not here on purpose: it is created from .env by scripts/k8s-secret.ps1.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - configmaps/shophub-config.yaml
+  - configmaps/gateway-config.yaml
+  - configmaps/postgres-init.yaml
+  - deployments/postgres.yaml
+  - services/postgres.yaml
+  - deployments/auth-service.yaml
+  - deployments/user-service.yaml
+  - deployments/product-service.yaml
+  - deployments/order-service.yaml
+  - deployments/payment-service.yaml
+  - deployments/notification-service.yaml
+  - deployments/gateway.yaml
+  - services/auth-service.yaml
+  - services/user-service.yaml
+  - services/product-service.yaml
+  - services/order-service.yaml
+  - services/payment-service.yaml
+  - services/notification-service.yaml
+  - services/gateway.yaml
+  - ingress.yaml
+  - autoscaling/product-service-hpa.yaml

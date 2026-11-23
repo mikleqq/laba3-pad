@@ -1,0 +1,8 @@
+# All ShopHub objects live in their own namespace: easy to list (kubectl get all -n shophub)
+# and to remove completely (kubectl delete namespace shophub).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shophub
+  labels:
+    app.kubernetes.io/part-of: shophub

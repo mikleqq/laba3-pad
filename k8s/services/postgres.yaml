@@ -1,0 +1,17 @@
+# Address of the database inside the cluster: postgres:5432 (only the services use it).
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: shophub
+  labels:
+    app: postgres
+    app.kubernetes.io/part-of: shophub
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres

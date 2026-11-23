@@ -1,0 +1,26 @@
+# Automatic horizontal scaling of the catalog (the most read service): Kubernetes adds pods when
+# the average CPU use is above 70% of the requested CPU, and removes them when the load drops.
+# Needs metrics-server (minikube addons enable metrics-server).
+# Manual scaling is shown on order-service (kubectl scale), which has no autoscaler.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: product-service
+  namespace: shophub
+  labels:
+    app: product-service
+    app.kubernetes.io/part-of: shophub
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: product-service
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

@@ -1,0 +1,117 @@
+# product-service: catalog and stock.
+# Deployment = "keep N identical pods of this image running"; Kubernetes recreates any pod that dies.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: shophub
+  labels:
+    app: product-service
+    app.kubernetes.io/part-of: shophub
+    tier: backend
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1           # during an update start 1 new pod first...
+      maxUnavailable: 0     # ...and never go below the desired number of ready pods
+  selector:
+    matchLabels:
+      app: product-service           # must match template.metadata.labels below
+  template:
+    metadata:
+      labels:
+        app: product-service
+        app.kubernetes.io/part-of: shophub
+        tier: backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:               # runs to completion BEFORE the service starts
+        - name: wait-for-postgres
+          image: busybox:1.37
+          command: ["sh", "-c", "until nc -z -w 2 $DB_HOST $DB_PORT; do echo waiting for postgres; sleep 2; done"]
+          envFrom:
+            - configMapRef:
+                name: shophub-config
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      containers:
+        - name: product-service
+          image: shophub/product-service:latest
+          imagePullPolicy: IfNotPresent   # image is loaded into Minikube, not pulled from a registry
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: shophub-config      # LOG_LEVEL, DB_HOST, DB_PORT, DB_NAME, ...
+          env:
+            - name: SERVICE_NAME
+              value: product-service
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: shophub-secrets
+                  key: PRODUCT_DB_PASSWORD
+            # $(VAR) is expanded by Kubernetes from the variables above / from the ConfigMap
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://product_svc:$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: shophub-secrets
+                  key: JWT_SECRET
+            - name: INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: shophub-secrets
+                  key: INTERNAL_TOKEN
+          resources:
+            requests:               # reserved for the pod when it is scheduled
+              cpu: 50m
+              memory: 96Mi
+            limits:                 # hard ceiling: CPU is throttled, memory overuse -> OOMKilled
+              cpu: 500m
+              memory: 256Mi
+          startupProbe:             # gives the service up to 60 s to start (waits for the database)
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:            # process alive? if not -> container is restarted
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:           # can it serve traffic (DB + event bus reachable)? if not -> removed from the Service
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

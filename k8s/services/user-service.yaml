@@ -1,0 +1,18 @@
+# Stable internal address of user-service: http://user-service:8000 (DNS name inside the cluster).
+# Traffic is spread over all READY pods with the label app=user-service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: shophub
+  labels:
+    app: user-service
+    app.kubernetes.io/part-of: shophub
+spec:
+  type: ClusterIP           # reachable only inside the cluster
+  selector:
+    app: user-service
+  ports:
+    - name: http
+      port: 8000            # port of the Service
+      targetPort: http      # named container port (8000)

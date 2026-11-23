@@ -1,0 +1,18 @@
+# Stable internal address of payment-service: http://payment-service:8000 (DNS name inside the cluster).
+# Traffic is spread over all READY pods with the label app=payment-service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: shophub
+  labels:
+    app: payment-service
+    app.kubernetes.io/part-of: shophub
+spec:
+  type: ClusterIP           # reachable only inside the cluster
+  selector:
+    app: payment-service
+  ports:
+    - name: http
+      port: 8000            # port of the Service
+      targetPort: http      # named container port (8000)

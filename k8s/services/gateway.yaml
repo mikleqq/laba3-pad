@@ -1,0 +1,17 @@
+# Internal address of the gateway; the Ingress forwards outside traffic to it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: shophub
+  labels:
+    app: gateway
+    app.kubernetes.io/part-of: shophub
+spec:
+  type: ClusterIP
+  selector:
+    app: gateway
+  ports:
+    - name: http
+      port: 80
+      targetPort: http      # container port 8080

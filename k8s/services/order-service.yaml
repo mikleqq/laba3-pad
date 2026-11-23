@@ -1,0 +1,18 @@
+# Stable internal address of order-service: http://order-service:8000 (DNS name inside the cluster).
+# Traffic is spread over all READY pods with the label app=order-service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: shophub
+  labels:
+    app: order-service
+    app.kubernetes.io/part-of: shophub
+spec:
+  type: ClusterIP           # reachable only inside the cluster
+  selector:
+    app: order-service
+  ports:
+    - name: http
+      port: 8000            # port of the Service
+      targetPort: http      # named container port (8000)

@@ -1,0 +1,25 @@
+# Non-secret configuration shared by the 6 services. It is NOT baked into the images:
+# every Deployment loads it as environment variables (envFrom), so changing a value only needs
+#   kubectl apply -f k8s/configmaps/shophub-config.yaml
+#   kubectl rollout restart deployment -n shophub
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shophub-config
+  namespace: shophub
+  labels:
+    app.kubernetes.io/part-of: shophub
+data:
+  LOG_LEVEL: "INFO"
+  # database (the password is in the Secret)
+  DB_HOST: "postgres"          # name of the postgres Service
+  DB_PORT: "5432"
+  DB_NAME: "shophub"
+  # service-to-service calls go through Kubernetes Services, never localhost
+  USER_SERVICE_URL: "http://user-service:8000"
+  PRODUCT_SERVICE_URL: "http://product-service:8000"
+  HTTP_TIMEOUT_SECONDS: "5"
+  # business settings
+  MAX_PAYMENT_AMOUNT: "5000"
+  SEED_DEMO_DATA: "true"
+  ADMIN_EMAIL: "admin@example.com"

@@ -1,0 +1,22 @@
+# Entry from outside the cluster (minikube addon "ingress" = nginx ingress controller).
+# Everything goes to the gateway, which serves the UI and routes the API.
+# Open it with "minikube tunnel" (http://127.0.0.1) or use port-forward (see README).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shophub
+  namespace: shophub
+  labels:
+    app.kubernetes.io/part-of: shophub
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway
+                port:
+                  name: http

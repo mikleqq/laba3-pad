@@ -1,0 +1,92 @@
+# Init script of the database (copy of database/init/01-shophub.sh, checked by tests/unit/test_k8s_manifests.py).
+# Mounted into the postgres pod at /docker-entrypoint-initdb.d and executed once, on the first start.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: shophub
+  labels:
+    app: postgres
+    app.kubernetes.io/part-of: shophub
+data:
+  01-shophub.sh: |
+    #!/bin/sh
+    # Runs ONCE, when the PostgreSQL data directory is empty (feature of the official postgres image:
+    # every *.sh / *.sql in /docker-entrypoint-initdb.d is executed on first start).
+    #
+    # Creates the single database "shophub" (POSTGRES_DB) with
+    #   - one login role + one schema per microservice (a role can only use its own schema),
+    #   - the event bus tables (schema "bus") used for asynchronous messages between services.
+    # Passwords are NOT stored here: they come from environment variables
+    # (Docker Compose: .env file, Kubernetes: Secret "shophub-secrets").
+    set -eu
+
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+        -v auth_pw="$AUTH_DB_PASSWORD" \
+        -v user_pw="$USER_DB_PASSWORD" \
+        -v product_pw="$PRODUCT_DB_PASSWORD" \
+        -v order_pw="$ORDER_DB_PASSWORD" \
+        -v payment_pw="$PAYMENT_DB_PASSWORD" \
+        -v notification_pw="$NOTIFICATION_DB_PASSWORD" <<'SQL'
+    -- one login role per microservice
+    CREATE ROLE auth_svc         LOGIN PASSWORD :'auth_pw';
+    CREATE ROLE user_svc         LOGIN PASSWORD :'user_pw';
+    CREATE ROLE product_svc      LOGIN PASSWORD :'product_pw';
+    CREATE ROLE order_svc        LOGIN PASSWORD :'order_pw';
+    CREATE ROLE payment_svc      LOGIN PASSWORD :'payment_pw';
+    CREATE ROLE notification_svc LOGIN PASSWORD :'notification_pw';
+
+    -- nobody connects or creates objects unless allowed explicitly
+    REVOKE ALL ON DATABASE shophub FROM PUBLIC;
+    REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+
+    -- one schema per microservice, owned by its role; tables the service creates land there (search_path)
+    CREATE SCHEMA auth          AUTHORIZATION auth_svc;
+    CREATE SCHEMA users         AUTHORIZATION user_svc;
+    CREATE SCHEMA products      AUTHORIZATION product_svc;
+    CREATE SCHEMA orders        AUTHORIZATION order_svc;
+    CREATE SCHEMA payments      AUTHORIZATION payment_svc;
+    CREATE SCHEMA notifications AUTHORIZATION notification_svc;
+
+    ALTER ROLE auth_svc         SET search_path = auth;
+    ALTER ROLE user_svc         SET search_path = users;
+    ALTER ROLE product_svc      SET search_path = products;
+    ALTER ROLE order_svc        SET search_path = orders;
+    ALTER ROLE payment_svc      SET search_path = payments;
+    ALTER ROLE notification_svc SET search_path = notifications;
+
+    GRANT CONNECT ON DATABASE shophub TO auth_svc, user_svc, product_svc, order_svc, payment_svc, notification_svc;
+
+    -- event bus: producers INSERT events, every consumer remembers how far it has read
+    CREATE SCHEMA bus;
+    CREATE TABLE bus.events (
+        id          bigserial PRIMARY KEY,
+        event_id    text        NOT NULL UNIQUE,
+        event_type  text        NOT NULL,
+        producer    text        NOT NULL,
+        payload     jsonb       NOT NULL,
+        created_at  timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE INDEX events_type_idx ON bus.events (event_type);
+    CREATE TABLE bus.consumer_offsets (
+        consumer       text PRIMARY KEY,
+        last_event_id  bigint      NOT NULL DEFAULT 0,
+        updated_at     timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE TABLE bus.dead_letters (
+        id          bigserial PRIMARY KEY,
+        consumer    text        NOT NULL,
+        event_id    bigint      NOT NULL,
+        error       text,
+        created_at  timestamptz NOT NULL DEFAULT now()
+    );
+
+    GRANT USAGE ON SCHEMA bus TO auth_svc, user_svc, product_svc, order_svc, payment_svc, notification_svc;
+    GRANT SELECT, INSERT ON bus.events TO auth_svc, user_svc, product_svc, order_svc, payment_svc, notification_svc;
+    GRANT USAGE ON SEQUENCE bus.events_id_seq, bus.dead_letters_id_seq
+        TO auth_svc, user_svc, product_svc, order_svc, payment_svc, notification_svc;
+    GRANT SELECT, INSERT, UPDATE ON bus.consumer_offsets TO auth_svc, user_svc, product_svc, order_svc, payment_svc, notification_svc;
+    GRANT INSERT ON bus.dead_letters TO auth_svc, user_svc, product_svc, order_svc, payment_svc, notification_svc;
+    SQL
+
+    echo "shophub database initialised: 6 schemas, 6 roles, event bus"

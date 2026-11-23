@@ -1,0 +1,13 @@
+# Settings of the nginx API gateway (filled into its config template at start).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: shophub
+  labels:
+    app: gateway
+    app.kubernetes.io/part-of: shophub
+data:
+  DNS_RESOLVER: "kube-dns.kube-system.svc.cluster.local"   # cluster DNS
+  UPSTREAM_SUFFIX: ".shophub.svc.cluster.local"            # order-service -> order-service.shophub.svc.cluster.local
+  RATE_LIMIT: "20r/s"

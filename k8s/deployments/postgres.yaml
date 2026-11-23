@@ -1,0 +1,101 @@
+# PostgreSQL: ONE database "shophub" for all services (a schema + login role per service).
+# StatefulSet instead of Deployment: the pod keeps a stable name (postgres-0) and its own
+# PersistentVolumeClaim, so the data survives pod restarts and rescheduling.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: shophub
+  labels:
+    app: postgres
+    app.kubernetes.io/part-of: shophub
+    tier: database
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+        app.kubernetes.io/part-of: shophub
+        tier: database
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: shophub-config
+                  key: DB_NAME
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: shophub-secrets
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA                       # subfolder: the volume root contains lost+found
+              value: /var/lib/postgresql/data/pgdata
+            # passwords of the 6 service roles, used once by the init script
+            - name: AUTH_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: shophub-secrets, key: AUTH_DB_PASSWORD }
+            - name: USER_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: shophub-secrets, key: USER_DB_PASSWORD }
+            - name: PRODUCT_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: shophub-secrets, key: PRODUCT_DB_PASSWORD }
+            - name: ORDER_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: shophub-secrets, key: ORDER_DB_PASSWORD }
+            - name: PAYMENT_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: shophub-secrets, key: PAYMENT_DB_PASSWORD }
+            - name: NOTIFICATION_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: shophub-secrets, key: NOTIFICATION_DB_PASSWORD }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-d", "shophub"]
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-d", "shophub"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-init
+            defaultMode: 0555                    # the init script must be executable
+  volumeClaimTemplates:                          # one PersistentVolumeClaim per pod (postgres-0 -> data-postgres-0)
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
