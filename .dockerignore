@@ -1,11 +1,12 @@
+# Fallback for builds without a per-Dockerfile ignore file.
 .git
+.github
 **/__pycache__
 **/*.pyc
-**/*.egg-info
-**/build
-.venv
-venv
 .env
+.env.*
+!.env.example
 tests
 docs
-.pytest_cache
+k8s
+*.md

@@ -1,2 +1,13 @@
-# Service-specific dependencies of auth-service.
-# Common runtime deps (FastAPI, SQLAlchemy, aio-pika, httpx, PyJWT) come from libs/common.
+# Runtime dependencies of auth-service (pinned for reproducible images).
+# httpx: calls user-service over HTTP.
+fastapi==0.165.0
+uvicorn==0.54.0
+uvloop==0.23.0
+httptools==0.9.0
+pydantic==2.14.4
+pydantic-settings==2.16.3
+email-validator==2.4.0
+SQLAlchemy[asyncio]==2.0.58
+asyncpg==0.32.0
+PyJWT==2.15.1
+httpx==0.28.1

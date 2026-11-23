@@ -1,0 +1,9 @@
+# Used by BuildKit for services/order-service/Dockerfile (build context = repository root).
+# Allowlist: send only what this image needs, so .env files, tests, .git and other
+# services never reach the build context (smaller context, better cache, no leaked secrets).
+*
+!libs/common/shopcommon/
+!services/order-service/requirements.txt
+!services/order-service/order_service/
+**/__pycache__
+**/*.pyc
