@@ -12,3 +12,6 @@ htmlcov/
 .idea/
 .vscode/
 *.db
+
+# real Kubernetes secrets (created from .env by scripts/k8s-secret.ps1)
+k8s/secrets/secret.yaml

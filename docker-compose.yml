@@ -1,0 +1,124 @@
+# ShopHub: the whole system with one command (check before Kubernetes):
+#   powershell -ExecutionPolicy Bypass -File scripts\new-env.ps1   # once: .env with random secrets
+#   docker compose up --build
+# Shop: http://localhost:8080
+#
+#                 browser
+#                    │  :8080
+#             ┌──────▼──────┐
+#             │   gateway   │  nginx: web UI + routing /auth /users /products /orders /payments /notifications
+#             └──────┬──────┘
+#   ┌──────┬──────┬──┴───┬───────┬──────────────┐
+#  auth   user  product order  payment  notification     6 microservices (port 8000 inside the network)
+#   └──────┴──────┴──┬───┴───────┴──────────────┘
+#             ┌──────▼──────┐
+#             │  postgres   │  one database "shophub": a schema per service + event bus (schema "bus")
+#             └─────────────┘
+name: laba3-pad
+
+x-service: &service
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+x-env: &env
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  JWT_SECRET: ${JWT_SECRET:?run scripts/new-env.ps1 to create .env}
+  INTERNAL_TOKEN: ${INTERNAL_TOKEN:?run scripts/new-env.ps1 to create .env}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: shophub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run scripts/new-env.ps1 to create .env}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      USER_DB_PASSWORD: ${USER_DB_PASSWORD}
+      PRODUCT_DB_PASSWORD: ${PRODUCT_DB_PASSWORD}
+      ORDER_DB_PASSWORD: ${ORDER_DB_PASSWORD}
+      PAYMENT_DB_PASSWORD: ${PAYMENT_DB_PASSWORD}
+      NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shophub"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  auth-service:
+    <<: *service
+    image: shophub/auth-service:latest
+    build: { context: ., dockerfile: services/auth-service/Dockerfile }
+    environment:
+      <<: *env
+      SERVICE_NAME: auth-service
+      DATABASE_URL: postgresql+asyncpg://auth_svc:${AUTH_DB_PASSWORD}@postgres:5432/shophub
+      USER_SERVICE_URL: http://user-service:8000
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+  user-service:
+    <<: *service
+    image: shophub/user-service:latest
+    build: { context: ., dockerfile: services/user-service/Dockerfile }
+    environment:
+      <<: *env
+      SERVICE_NAME: user-service
+      DATABASE_URL: postgresql+asyncpg://user_svc:${USER_DB_PASSWORD}@postgres:5432/shophub
+
+  product-service:
+    <<: *service
+    image: shophub/product-service:latest
+    build: { context: ., dockerfile: services/product-service/Dockerfile }
+    environment:
+      <<: *env
+      SERVICE_NAME: product-service
+      DATABASE_URL: postgresql+asyncpg://product_svc:${PRODUCT_DB_PASSWORD}@postgres:5432/shophub
+      SEED_DEMO_DATA: "true"
+
+  order-service:
+    <<: *service
+    image: shophub/order-service:latest
+    build: { context: ., dockerfile: services/order-service/Dockerfile }
+    environment:
+      <<: *env
+      SERVICE_NAME: order-service
+      DATABASE_URL: postgresql+asyncpg://order_svc:${ORDER_DB_PASSWORD}@postgres:5432/shophub
+      PRODUCT_SERVICE_URL: http://product-service:8000
+
+  payment-service:
+    <<: *service
+    image: shophub/payment-service:latest
+    build: { context: ., dockerfile: services/payment-service/Dockerfile }
+    environment:
+      <<: *env
+      SERVICE_NAME: payment-service
+      DATABASE_URL: postgresql+asyncpg://payment_svc:${PAYMENT_DB_PASSWORD}@postgres:5432/shophub
+      MAX_PAYMENT_AMOUNT: "5000"
+
+  notification-service:
+    <<: *service
+    image: shophub/notification-service:latest
+    build: { context: ., dockerfile: services/notification-service/Dockerfile }
+    environment:
+      <<: *env
+      SERVICE_NAME: notification-service
+      DATABASE_URL: postgresql+asyncpg://notification_svc:${NOTIFICATION_DB_PASSWORD}@postgres:5432/shophub
+
+  gateway:
+    image: shophub/gateway:latest
+    build: { context: ., dockerfile: gateway/Dockerfile }
+    restart: unless-stopped
+    environment:
+      DNS_RESOLVER: 127.0.0.11     # Docker's internal DNS
+      UPSTREAM_SUFFIX: ""
+      RATE_LIMIT: 20r/s
+    ports:
+      - "8080:8080"                # the only port published to the host
+
+volumes:
+  pgdata:

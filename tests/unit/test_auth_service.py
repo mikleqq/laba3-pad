@@ -134,4 +134,4 @@ def test_secrets_are_required(monkeypatch):
     monkeypatch.delenv("JWT_SECRET", raising=False)
     monkeypatch.delenv("INTERNAL_TOKEN", raising=False)
     with pytest.raises(pydantic.ValidationError):
-        Settings()  # no default secrets in the code
+        Settings(_env_file=None)  # no default secrets in the code
