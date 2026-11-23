@@ -89,6 +89,9 @@ class AuthService:
 async def ensure_admin(app) -> None:
     """Create the bootstrap administrator account (idempotent, retried in background)."""
     settings: Settings = app.state.settings
+    if not settings.admin_email or not settings.admin_password:
+        logger.info("no bootstrap administrator configured")
+        return
     data = RegisterRequest(email=settings.admin_email, password=settings.admin_password, full_name=settings.admin_full_name)
     for attempt in range(1, 11):
         async with app.state.db.sessionmaker() as session:

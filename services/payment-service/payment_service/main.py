@@ -45,5 +45,3 @@ def create_app(settings: Optional[Settings] = None, *, bus: Optional[EventBus] =
     app.state.provider = provider
     return app
 
-
-app = create_app()

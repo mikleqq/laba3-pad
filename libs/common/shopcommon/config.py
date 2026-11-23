@@ -8,6 +8,7 @@ differently per environment without code changes.
 
 from __future__ import annotations
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,9 +26,10 @@ class BaseServiceSettings(BaseSettings):
     event_poll_interval_seconds: float = 0.5
 
     # Security
-    jwt_secret: str = "dev-secret-change-me"
+    # Secrets have no defaults: they must come from the environment (Docker .env / Kubernetes Secret).
+    jwt_secret: str = Field(min_length=16)
     jwt_algorithm: str = "HS256"
-    internal_token: str = "dev-internal-token-change-me"
+    internal_token: str = Field(min_length=16)
 
     # Outgoing HTTP calls to other services
     http_timeout_seconds: float = 5.0

@@ -77,5 +77,3 @@ def create_app(
     app.state.product_client = product_client
     return app
 
-
-app = create_app()

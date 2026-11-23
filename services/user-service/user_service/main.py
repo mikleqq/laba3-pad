@@ -20,5 +20,3 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         routers=[router, internal_router],
     )
 
-
-app = create_app()

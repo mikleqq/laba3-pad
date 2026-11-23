@@ -29,5 +29,3 @@ def create_app(settings: Optional[Settings] = None, *, bus: Optional[EventBus] =
         on_startup=on_startup,
     )
 
-
-app = create_app()

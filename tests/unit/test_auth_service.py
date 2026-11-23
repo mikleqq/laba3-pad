@@ -118,9 +118,20 @@ async def test_registration_when_user_service_unreachable():
 
 async def test_bootstrap_admin_created():
     fake, _ = _fake_user_service()
-    app = create_app(Settings(**BASE, password_hash_iterations=1000), bus=InMemoryEventBus(), user_transport=fake)
+    settings = Settings(**BASE, password_hash_iterations=1000, admin_email="admin@example.com", admin_password="Admin12345!")
+    app = create_app(settings, bus=InMemoryEventBus(), user_transport=fake)
     async with running(app), client(app) as c:
         await app.state.admin_task
         r = await c.post("/auth/login", json={"email": "admin@example.com", "password": "Admin12345!"})
         assert r.status_code == 200
         assert r.json()["user"]["role"] == "admin"
+
+
+def test_secrets_are_required(monkeypatch):
+    import pydantic
+    import pytest
+
+    monkeypatch.delenv("JWT_SECRET", raising=False)
+    monkeypatch.delenv("INTERNAL_TOKEN", raising=False)
+    with pytest.raises(pydantic.ValidationError):
+        Settings()  # no default secrets in the code
