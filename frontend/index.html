@@ -320,7 +320,7 @@
   <div class="wrap cols">
     <div>
       <h4>⚡ ShopHub</h4>
-      <p>Учебный интернет-магазин техники. Каждая часть магазина — отдельный микросервис в своём Docker-контейнере:
+      <p>Учебный интернет-магазин техники. Каждая часть магазина — отдельный микросервис (в Kubernetes — отдельный Deployment):
          вход, профили, каталог, заказы, оплата и уведомления. Если один из них недоступен, остальные продолжают работать.</p>
     </div>
     <div>
@@ -462,14 +462,15 @@
 "use strict";
 
 /* ==================================================================== config */
-const HOST = location.hostname || "localhost";
+// All requests go to the same origin: the API Gateway (nginx) routes /auth, /products, /orders, ...
+// to the right service, and /status/<key> to that service's /health.
 const SERVICES = {
-  auth:         { name: "auth-service",         label: "Вход",        port: 8001 },
-  user:         { name: "user-service",         label: "Профили",     port: 8002 },
-  product:      { name: "product-service",      label: "Каталог",     port: 8003 },
-  order:        { name: "order-service",        label: "Заказы",      port: 8004 },
-  payment:      { name: "payment-service",      label: "Оплата",      port: 8005 },
-  notification: { name: "notification-service", label: "Уведомления", port: 8006 },
+  auth:         { name: "auth-service",         label: "Вход" },
+  user:         { name: "user-service",         label: "Профили" },
+  product:      { name: "product-service",      label: "Каталог" },
+  order:        { name: "order-service",        label: "Заказы" },
+  payment:      { name: "payment-service",      label: "Оплата" },
+  notification: { name: "notification-service", label: "Уведомления" },
 };
 const CATEGORIES = [
   { key: "all",         title: "Все товары",  icon: "✨" },
@@ -538,9 +539,10 @@ async function api(key, path, { method = "GET", body, timeout = 5000 } = {}) {
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (state.token) headers.Authorization = "Bearer " + state.token;
   try {
-    const res = await fetch(`http://${HOST}:${SERVICES[key].port}${path}`, {
+    const res = await fetch(path, {
       method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: ctrl.signal,
     });
+    if (res.headers.get("X-Gateway-Error")) throw new Error("service unavailable");  // the gateway could not reach the service
     let data = null;
     try { data = await res.json(); } catch { /* empty body */ }
     setUp(key, true);
@@ -574,7 +576,7 @@ async function healthCheck() {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 2000);
     try {
-      const r = await fetch(`http://${HOST}:${SERVICES[key].port}/health`, { signal: ctrl.signal });
+      const r = await fetch(`/status/${key}`, { signal: ctrl.signal });
       setUp(key, r.ok);
     } catch { setUp(key, false); } finally { clearTimeout(timer); }
   }));

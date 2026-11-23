@@ -1,0 +1,4 @@
+# Used by BuildKit for gateway/Dockerfile (build context = repository root): send only what the image needs.
+*
+!gateway/nginx.conf.template
+!frontend/index.html

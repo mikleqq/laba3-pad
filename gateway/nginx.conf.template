@@ -1,0 +1,90 @@
+# ShopHub API Gateway + web UI (nginx).
+# ${...} placeholders are filled from environment variables when the container starts
+# (the official nginx image runs envsubst on /etc/nginx/templates/*.template).
+
+# Keep the client's X-Request-ID or generate one; it is passed to every service and appears in all logs.
+map $http_x_request_id $req_id {
+    default $http_x_request_id;
+    ""      $request_id;
+}
+
+# Public path prefix -> service that owns it.
+map $uri $api_service {
+    ~^/auth(/|$)           auth-service;
+    ~^/users(/|$)          user-service;
+    ~^/products(/|$)       product-service;
+    ~^/orders(/|$)         order-service;
+    ~^/payments(/|$)       payment-service;
+    ~^/notifications(/|$)  notification-service;
+}
+
+# Rate limiting per client IP (protects the services from floods).
+limit_req_zone $binary_remote_addr zone=api:10m rate=${RATE_LIMIT};
+
+# Structured access log, same fields as the services' logs.
+log_format json escape=json '{"timestamp":"$time_iso8601","service":"api-gateway","level":"INFO",'
+                            '"request_id":"$req_id","message":"$request_method $request_uri",'
+                            '"status":$status,"duration_ms":$request_time,"upstream":"$upstream_addr"}';
+
+server {
+    listen 8080;
+    server_tokens off;
+    charset utf-8;
+    access_log /dev/stdout json;
+    client_max_body_size 1m;
+
+    # Service names are resolved at request time, so a restarted/rescheduled service is found again.
+    resolver ${DNS_RESOLVER} valid=10s ipv6=off;
+    resolver_timeout 2s;
+
+    proxy_http_version 1.1;
+    proxy_connect_timeout 2s;
+    proxy_read_timeout 15s;
+    proxy_set_header Host $host;
+    proxy_set_header X-Request-ID $req_id;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Liveness of the gateway itself.
+    location = /healthz {
+        access_log off;
+        default_type application/json;
+        return 200 '{"status":"ok","service":"api-gateway"}';
+    }
+
+    # Health of each service for the web UI: /status/order -> order-service:8000/health
+    location ~ ^/status/(auth|user|product|order|payment|notification)$ {
+        access_log off;
+        proxy_pass http://$1-service${UPSTREAM_SUFFIX}:8000/health;
+        error_page 502 503 504 = @unavailable;
+    }
+
+    # Service-to-service endpoints are never exposed to clients.
+    location ^~ /internal/ {
+        return 404;
+    }
+
+    # Business API: /auth/..., /products/..., /orders/... -> the owning service (path unchanged).
+    location ~ ^/(auth|users|products|orders|payments|notifications)(/|$) {
+        limit_req zone=api burst=40 nodelay;
+        limit_req_status 429;
+        proxy_pass http://$api_service${UPSTREAM_SUFFIX}:8000;   # the service echoes X-Request-ID itself
+        # the service is down / scaled to zero / not resolvable -> clean JSON instead of an HTML error page
+        error_page 502 503 504 = @unavailable;
+    }
+
+    location @unavailable {
+        default_type application/json;
+        add_header X-Gateway-Error "service-unavailable" always;
+        add_header X-Request-ID $req_id always;
+        return 503 '{"error":{"code":"service_unavailable","message":"Сервис временно недоступен","request_id":"$req_id"}}';
+    }
+
+    # Web UI (single page).
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+    }
+}
