@@ -110,7 +110,6 @@
   .notice.info { background: var(--accent-soft); color: #1e3a8a; border: 1px solid #c7d2fe; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; margin-bottom: 40px; }
-  .grid.stale .card { opacity: .55; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; transition: .18s; cursor: pointer; }
   .card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: #cbd5e1; }
   .card .pic { height: 150px; border-radius: 12px; display: grid; place-items: center; font-size: 64px; position: relative; }
@@ -490,9 +489,9 @@ const MAX_QTY = 100;
 /* ==================================================================== state */
 const state = {
   up: Object.fromEntries(Object.keys(SERVICES).map(k => [k, null])),
-  products: [], productsLoaded: false, productsStale: false,
+  products: [], productsLoaded: false,
   category: "all", search: "", sort: "popular", onlyStock: false,
-  cart: {}, token: null, user: null, profile: null,
+  cart: {}, cartInfo: {}, token: null, user: null, profile: null,
   orders: [], ordersOk: true, payments: {}, paymentsOk: true,
   notes: { items: [], unread: 0 }, notesOk: true,
   afterLogin: null,
@@ -562,13 +561,27 @@ function setUp(key, up) {
   if (state.up[key] === up) return;
   const was = state.up[key];
   state.up[key] = up;
+  if (!up) forget(key);
   renderSys();
   if (was === false && up) refreshFor(key);
-  if (key === "product") renderCatalog();
+  if (key === "product") { renderCatalog(); renderCart(); }
   if (key === "order" || key === "payment") { renderCart(); renderOrders(); }
   if (key === "notification") renderNotes();
   if (key === "auth") renderAuthNotice();
-  if (key === "user") renderProfileNotice();
+  if (key === "user") { renderProfileNotice(); renderUser(); }
+}
+
+/** A service that does not answer has no data on the page: nothing is shown from old copies. */
+function forget(key) {
+  if (key === "product") {
+    state.products = [];
+    if ($("#modal-product").classList.contains("show")) closeAll();
+    renderHero();
+  }
+  if (key === "order") state.orders = [];
+  if (key === "payment") { state.payments = {}; state.paymentsOk = false; }
+  if (key === "notification") { state.notes = { items: [], unread: 0 }; state.notesOk = false; }
+  if (key === "user") state.profile = null;
 }
 
 async function healthCheck() {
@@ -669,14 +682,9 @@ function showServerErrors(form, res) {
 /* ==================================================================== data */
 async function loadProducts() {
   const r = await api("product", "/products?limit=100");
-  if (r.ok) {
-    state.products = r.data.items;
-    state.productsLoaded = true;
-    state.productsStale = false;
-    store.set("products", state.products);
-  } else if (r.down) {
-    state.productsStale = state.products.length > 0;
-  }
+  state.products = r.ok ? r.data.items : [];
+  state.productsLoaded = r.ok;
+  if (r.ok) for (const p of state.products) if (state.cart[p.id]) state.cartInfo[p.id] = snapshot(p);
   renderCatalog(); renderHero(); renderCart();
 }
 
@@ -684,10 +692,10 @@ async function loadOrders() {
   if (!state.token) return;
   const r = await api("order", "/orders?limit=30");
   state.ordersOk = r.ok;
-  if (r.ok) state.orders = r.data.items;
+  state.orders = r.ok ? r.data.items : [];
   const p = await api("payment", "/payments?limit=100");
   state.paymentsOk = p.ok;
-  if (p.ok) state.payments = Object.fromEntries(p.data.items.map(x => [x.order_id, x]));
+  state.payments = p.ok ? Object.fromEntries(p.data.items.map(x => [x.order_id, x])) : {};
   renderOrders();
 }
 
@@ -695,14 +703,15 @@ async function loadNotes() {
   if (!state.token) return;
   const r = await api("notification", "/notifications?limit=30");
   state.notesOk = r.ok;
-  if (r.ok) state.notes = r.data;
+  state.notes = r.ok ? r.data : { items: [], unread: 0 };
   renderNotes();
 }
 
 async function loadProfile() {
   if (!state.token) return;
   const r = await api("user", "/users/me");
-  if (r.ok) state.profile = r.data;
+  state.profile = r.ok ? r.data : null;
+  renderUser();
 }
 
 function refreshFor(key) {
@@ -764,15 +773,11 @@ function renderCatalog() {
   const noticeBox = $("#catalog-notice");
   const grid = $("#grid");
 
-  if (state.up.product === false) {
-    noticeBox.innerHTML = notice("warn", "⚠️", "Каталог временно не обновляется");
-  } else noticeBox.innerHTML = "";
-  grid.classList.toggle("stale", state.up.product === false && state.products.length > 0);
-
+  noticeBox.innerHTML = "";
   if (!state.products.length) {
     $("#list-count").textContent = "";
     grid.innerHTML = state.up.product === false
-      ? `<div class="empty"><div class="big">📦</div>Каталог временно не обновляется</div>`
+      ? `<div class="empty"><div class="big">📦</div><b>Каталог временно недоступен</b></div>`
       : `<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>`;
     return;
   }
@@ -823,9 +828,17 @@ function openProduct(id) {
 }
 
 /* ==================================================================== rendering: cart */
+function snapshot(p) { return { name: p.name, price: p.price, category: p.category }; }
+
+/** Cart lines: live product data when the catalog answers, otherwise the cart's own snapshot. */
 function cartLines() {
   const byId = Object.fromEntries(state.products.map(p => [p.id, p]));
-  return Object.entries(state.cart).filter(([, q]) => q > 0).map(([id, qty]) => ({ product: byId[id], id: Number(id), qty }));
+  return Object.entries(state.cart).filter(([, q]) => q > 0).map(([id, qty]) => ({
+    live: byId[id] || null,
+    product: byId[id] || state.cartInfo[id] || null,
+    id: Number(id),
+    qty,
+  }));
 }
 function cartTotal() { return cartLines().reduce((s, l) => s + (l.product ? Number(l.product.price) * l.qty : 0), 0); }
 
@@ -836,6 +849,7 @@ function renderCart() {
   badge.hidden = !count; badge.textContent = count;
   $("#cart-sum").textContent = count ? money(cartTotal()) : "Корзина";
   store.set("cart", state.cart);
+  store.set("cartInfo", state.cartInfo);
 
   const body = $("#cart-body"), foot = $("#cart-foot");
   if (!lines.length) {
@@ -844,23 +858,24 @@ function renderCart() {
     return;
   }
   body.innerHTML = lines.map(l => {
-    const p = l.product || { name: "Товар №" + l.id, price: 0, stock: 0, category: "accessories" };
-    const err = p.stock < l.qty ? `<div class="err">На складе только ${p.stock} шт.</div>` : "";
+    const p = l.product || { name: "Товар №" + l.id, price: 0, category: "accessories" };
+    const err = l.live && l.live.stock < l.qty ? `<div class="err">На складе только ${l.live.stock} шт.</div>` : "";
+    const maxQty = l.live ? Math.min(l.live.stock, MAX_QTY) : 0;
     return `<div class="line">
       <div class="thumb ${catClass(p)}">${productEmoji(p)}</div>
       <div><div class="nm">${esc(p.name)}</div><div class="pr">${money(p.price)} × ${l.qty} = <b>${money(Number(p.price) * l.qty)}</b></div>${err}
         <button class="link danger" style="font-size:12.5px" data-remove="${l.id}">Удалить</button></div>
-      <span class="stepper"><button data-dec="${l.id}">−</button><span>${l.qty}</span><button data-inc="${l.id}" ${l.qty >= Math.min(p.stock, MAX_QTY) ? "disabled" : ""}>+</button></span>
+      <span class="stepper"><button data-dec="${l.id}">−</button><span>${l.qty}</span><button data-inc="${l.id}" ${l.qty >= maxQty ? "disabled" : ""}>+</button></span>
     </div>`;
   }).join("");
-  const orderDown = state.up.order === false;
-  const invalid = lines.some(l => !l.product || l.product.stock < l.qty);
+  const blocked = state.up.order === false || state.up.product === false;
+  const invalid = lines.some(l => !l.live || l.live.stock < l.qty);
   foot.innerHTML = `
-    ${orderDown ? notice("bad", "⛔", "Оформление заказов временно недоступно") : ""}
+    ${blocked ? notice("bad", "⛔", "Оформление заказов временно недоступно") : ""}
     <div class="sum"><span>Товары (${lines.reduce((s, l) => s + l.qty, 0)})</span><span>${money(cartTotal())}</span></div>
     <div class="sum"><span>Доставка</span><span>бесплатно</span></div>
     <div class="sum total"><span>Итого</span><span>${money(cartTotal())}</span></div>
-    <button class="btn block" id="go-checkout" ${orderDown || invalid ? "disabled" : ""}>Перейти к оформлению</button>`;
+    <button class="btn block" id="go-checkout" ${blocked || invalid ? "disabled" : ""}>Перейти к оформлению</button>`;
 }
 
 function addToCart(id, qty = 1) {
@@ -870,6 +885,7 @@ function addToCart(id, qty = 1) {
   const max = Math.min(p.stock, MAX_QTY);
   if (now + qty > max) { toast(`Можно заказать не больше ${max} шт.`, "bad"); return; }
   state.cart[id] = now + qty;
+  state.cartInfo[id] = snapshot(p);
   renderCart(); renderCatalog();
   toast(`«${p.name}» в корзине`, "ok");
 }
@@ -883,15 +899,17 @@ function renderOrders() {
   const b = $("#orders-badge"); b.hidden = !active; b.textContent = active;
   const box = $("#orders-body");
   if (!state.token) { box.innerHTML = `<div class="empty"><div class="big">📦</div>Войдите, чтобы видеть свои заказы.<br><br><button class="btn" data-login>Войти</button></div>`; return; }
-  let html = "";
-  if (state.up.order === false) html += notice("bad", "⛔", "Заказы временно не обновляются");
-  if (state.up.payment === false) html += notice("warn", "💳", "Статус оплаты временно не обновляется");
+  if (state.up.order === false) {
+    box.innerHTML = `<div class="empty"><div class="big">🧾</div><b>Заказы временно недоступны</b></div>`;
+    return;
+  }
+  let html = state.up.payment === false ? notice("warn", "💳", "Статус оплаты временно недоступен") : "";
   if (!state.orders.length) { box.innerHTML = html + `<div class="empty"><div class="big">🧾</div>Заказов пока нет.</div>`; return; }
   html += state.orders.map(o => {
     const [st, cls] = ORDER_STATUS[o.status] || [o.status, ""];
     const pay = state.payments[o.id];
     let payChip;
-    if (!state.paymentsOk) payChip = `<span class="chip off">💳 нет данных об оплате</span>`;
+    if (!state.paymentsOk) payChip = `<span class="chip off">💳 статус оплаты недоступен</span>`;
     else if (pay) { const [t, c] = PAY_STATUS[pay.status] || [pay.status, ""]; payChip = `<span class="chip ${c}" title="${esc(pay.failure_reason || "")}">${t}</span>`; }
     else payChip = `<span class="chip warn">💳 Обрабатывается…</span>`;
     const reason = pay && pay.failure_reason && pay.status === "failed" ? `<div class="addr" style="color:var(--bad)">Причина: ${esc(pay.failure_reason)}</div>` : "";
@@ -913,9 +931,11 @@ function renderNotes() {
   const b = $("#notes-badge"); b.hidden = !unread; b.textContent = unread;
   const box = $("#notes-body");
   if (!state.token) { box.innerHTML = `<div class="empty"><div class="big">🔔</div>Войдите, чтобы получать уведомления о заказах.<br><br><button class="btn" data-login>Войти</button></div>`; return; }
-  let html = state.up.notification === false
-    ? notice("warn", "🔕", "Уведомления временно не обновляются")
-    : "";
+  if (state.up.notification === false) {
+    box.innerHTML = `<div class="empty"><div class="big">🔕</div><b>Уведомления временно недоступны</b></div>`;
+    return;
+  }
+  let html = "";
   const items = state.notes.items || [];
   html += items.length ? items.map(n => `<div class="note ${n.is_read ? "read" : ""}" ${n.is_read ? "" : `data-read="${n.id}"`}>
       <div class="s">${esc(n.subject)}</div><div class="m">${esc(n.message)}</div><div class="t">${fmtDate(n.created_at)}</div></div>`).join("")
@@ -937,8 +957,14 @@ function renderAuthNotice() {
 }
 function renderProfileNotice() {
   $("#profile-notice").innerHTML = state.up.user === false
-    ? notice("warn", "👤", "Профиль временно не обновляется") : "";
-  $("#profile-submit").disabled = state.up.user === false;
+    ? notice("warn", "👤", "Профиль временно недоступен") : "";
+  const down = state.up.user === false;
+  $("#profile-submit").disabled = down;
+  for (const id of ["p-name", "p-phone", "p-addr"]) {
+    const input = $("#" + id);
+    input.disabled = down;
+    if (down) input.value = "";
+  }
 }
 
 /* ==================================================================== drawers & modals */
@@ -1199,7 +1225,8 @@ for (const id of ["c-phone", "p-phone"]) {
 
 /* ==================================================================== start */
 state.cart = store.get("cart") || {};
-state.products = store.get("products") || [];
+state.cartInfo = store.get("cartInfo") || {};
+store.del("products");  // older versions kept a copy of the catalog in the browser
 const saved = store.get("session");
 if (saved && saved.token) { state.token = saved.token; state.user = saved.user; }
 renderCats(); renderSys(); renderHero(); renderCatalog(); renderCart(); renderOrders(); renderNotes(); renderUser();
